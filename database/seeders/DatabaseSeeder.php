@@ -15,11 +15,13 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Tạo tài khoản quản trị mẫu để có thể đăng nhập vào Filament.
+        User::firstOrCreate(
+            ['email' => 'test@example.com'],
+            ['name' => 'Test User', 'password' => 'password'],
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Gọi seeder dữ liệu nghiệp vụ sau khi các bảng cha đã sẵn sàng.
+        $this->call(DemoDataSeeder::class);
     }
 }

@@ -1,0 +1,7 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+/* Nạp entry Tailwind chính để các utility của giao diện quản lý đơn hàng luôn được build vào theme Filament. */
+@import '../../app.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+@source '../../../../resources/views/filament/resources/orders/pages/order-manager-status.blade.php';
