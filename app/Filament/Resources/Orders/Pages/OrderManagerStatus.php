@@ -11,6 +11,7 @@ use Filament\Support\Enums\Width;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\On;
@@ -52,6 +53,18 @@ class OrderManagerStatus extends Page implements HasTable
             ->query($this->getOrdersQuery())
             ->columns($this->getTableColumns())
             ->defaultPaginationPageOption(10)
+            ->filters([
+                // Lọc trực tiếp theo tiến độ sản xuất đang lưu trên Order.
+                SelectFilter::make('status')
+                    ->label('Trạng thái sản xuất')
+                    ->options([
+                        'pending' => 'Đơn mới',
+                        'processing' => 'Xử lý',
+                        'completed' => 'Hoàn thành',
+                        'cancelled' => 'Đã hủy',
+                    ])
+                    ->placeholder('Tất cả trạng thái'),
+            ])
             // Cho phép click bất kỳ vị trí nào trên dòng để đổi panel chi tiết bên phải.
             ->recordAction('selectOrder')
             ->toolbarActions($this->getTableToolbarActions());

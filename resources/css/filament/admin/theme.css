@@ -1,6 +1,54 @@
+/* Roboto có subset tiếng Việt để dấu tiếng Việt hiển thị đầy đủ và đồng nhất trong trang quản trị. */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
+
 @import '../../../../vendor/filament/filament/resources/css/theme.css';
 /* Nạp entry Tailwind chính để các utility của giao diện quản lý đơn hàng luôn được build vào theme Filament. */
 @import '../../app.css';
+
+:root,
+.fi-body {
+    font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Token và component class riêng cho màn hình quản lý đơn hàng. */
+.order-status-demo {
+    --oms-border: theme(colors.slate.300);
+    --oms-text: theme(colors.slate.900);
+    --oms-muted: theme(colors.slate.500);
+    --oms-surface: theme(colors.white);
+    --oms-radius: 1rem;
+
+    color: var(--oms-text);
+    font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+}
+
+.order-status-demo .oms-card {
+    border: 1px solid var(--oms-border);
+    border-radius: var(--oms-radius);
+    background: var(--oms-surface);
+    box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
+}
+
+
+.order-status-demo .oms-tabs {
+    display: flex;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--oms-border);
+    background: var(--oms-surface);
+}
+
+.order-status-demo .oms-tab {
+    flex: none;
+    padding: 1.25rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--oms-muted);
+}
+
+.order-status-demo .oms-tab[aria-selected='true'] {
+    border-bottom: 2px solid theme(colors.blue.600);
+    color: theme(colors.blue.600);
+}
 
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
