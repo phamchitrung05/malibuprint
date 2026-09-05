@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Orders\Schemas;
 
 use App\Models\Customer;
+use App\Models\Product;
 use App\Models\ProductSku;
 use App\Models\User;
 use Filament\Forms\Components\DatePicker;
@@ -21,7 +22,6 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 
 class OrderForm
@@ -109,129 +109,6 @@ class OrderForm
                                         ->visible(fn (Get $get, string $operation): bool => $operation === 'create' && $get('customer_mode') === 'new')
                                         ->columnSpanFull(),
                                 ]),
-                            Section::make('Thêm sản phẩm')
-                                ->icon(Heroicon::OutlinedCube)
-                                ->description('Chọn SKU và nhập số lượng cho từng sản phẩm')
-                                ->schema([
-                                    Repeater::make('items')
-                                        ->relationship()
-                                        ->hiddenLabel()
-                                        ->table([
-                                            TableColumn::make('Sản phẩm / SKU')
-                                                ->markAsRequired()
-                                                ->width('40%'),
-                                            TableColumn::make('Đơn giá')
-                                                ->markAsRequired()
-                                                ->width('20%'),
-                                            TableColumn::make('Số lượng')
-                                                ->markAsRequired()
-                                                ->width('15%'),
-                                            TableColumn::make('Thành tiền')
-                                                ->markAsRequired()
-                                                ->width('20%'),
-                                        ])
-                                        ->schema([
-                                            Select::make('product_sku_id')
-                                                ->label('Sản phẩm / SKU')
-                                                ->relationship(
-                                                    name: 'productSku',
-                                                    titleAttribute: 'sku_code',
-                                                    modifyQueryUsing: fn (Builder $query): Builder => $query
-                                                        ->with('product')
-                                                        ->where('status', 'active'),
-                                                )
-                                                ->getOptionLabelFromRecordUsing(fn (ProductSku $record): string => ($record->product?->name ?? 'Sản phẩm').' - '.$record->sku_code)
-                                                ->searchable(['sku_code'])
-                                                ->preload()
-                                                ->required()
-                                                ->distinct()
-                                                ->live()
-                                                ->afterStateUpdated(function ($state, Set $set, Get $get): void {
-                                                    $price = ProductSku::query()->find($state)?->price ?? 0;
-
-                                                    $set('unit_price', $price);
-                                                    $set('subtotal', (float) $price * max(1, (int) $get('quantity')));
-                                                    self::updateTotals($get, $set);
-                                                }),
-                                            TextInput::make('unit_price')
-                                                ->label('Đơn giá')
-                                                ->numeric()
-                                                ->minValue(0)
-                                                ->default(0)
-                                                ->suffix('đ')
-                                                ->required()
-                                                ->live(onBlur: true)
-                                                ->afterStateUpdated(function (Get $get, Set $set): void {
-                                                    $set('subtotal', (float) $get('unit_price') * max(1, (int) $get('quantity')));
-                                                    self::updateTotals($get, $set);
-                                                }),
-                                            TextInput::make('quantity')
-                                                ->label('Số lượng')
-                                                ->numeric()
-                                                ->minValue(1)
-                                                ->default(1)
-                                                ->required()
-                                                ->live(onBlur: true)
-                                                ->afterStateUpdated(function (Get $get, Set $set): void {
-                                                    $set('subtotal', (float) $get('unit_price') * max(1, (int) $get('quantity')));
-                                                    self::updateTotals($get, $set);
-                                                }),
-                                            Placeholder::make('subtotal')
-                                                ->label('Thành tiền')
-                                                ->content(
-                                                    fn (Get $get): string => number_format(
-                                                            (float) ($get('quantity') ?? 0) * (float) ($get('total_unit_price') ?? 0),
-                                                            0,
-                                                            ',',
-                                                            '.',
-                                                        ) . ' ₫'
-                                                )
-                                                ->dehydrated(false),
-                                        ])
-                                        ->defaultItems(1)
-                                        ->minItems(1)
-                                        ->addActionLabel('Thêm sản phẩm')
-                                        ->reorderable(false)
-                                        ->live()
-                                        ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotals($get, $set)),
-                                ]),
-                            Section::make('Tổng tiền')
-                                ->icon(Heroicon::OutlinedBanknotes)
-                                ->schema([
-                                    Hidden::make('subtotal')->default(0),
-                                    Hidden::make('total_amount')->default(0),
-                                    Placeholder::make('static_subtotal')
-                                        ->hiddenLabel()
-                                        ->content(new HtmlString('<div class="flex items-center justify-between gap-4 text-sm"><span class="text-gray-500 dark:text-gray-400">Tạm tính</span><span class="font-medium text-gray-950 dark:text-white">76.000.000đ</span></div>')),
-                                    Grid::make([
-                                        'default' => 1,
-                                        'sm' => 12,
-                                    ])->schema([
-                                        Placeholder::make('discount_label')
-                                            ->hiddenLabel()
-                                            ->content('Giảm giá')
-                                            ->extraAttributes(['class' => 'flex h-full items-center text-sm text-gray-500 dark:text-gray-400'])
-                                            ->columnSpan([
-                                                'default' => 'full',
-                                                'sm' => 6,
-                                            ]),
-                                        TextInput::make('discount')
-                                            ->hiddenLabel()
-                                            ->numeric()
-                                            ->minValue(0)
-                                            ->default(0)
-                                            ->suffix('đ')
-                                            ->live(onBlur: true)
-                                            ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotals($get, $set))
-                                            ->columnSpan([
-                                                'default' => 'full',
-                                                'sm' => 6,
-                                            ]),
-                                    ]),
-                                    Placeholder::make('static_total')
-                                        ->hiddenLabel()
-                                        ->content(new HtmlString('<div class="flex items-center justify-between gap-4 border-t border-gray-200 pt-4 dark:border-white/10"><span class="text-base font-bold text-gray-950 dark:text-white">Tổng cộng</span><span class="text-xl font-bold text-primary-600 dark:text-primary-400">83.600.000đ</span></div>')),
-                                ]),
                         ]),
                     Grid::make(1)
                         ->columnSpan([
@@ -278,15 +155,162 @@ class OrderForm
                                         ->dehydrated(false)
                                         ->columnSpanFull(),
                                 ]),
-                            Section::make('Ghi chú')
-                                ->icon(Heroicon::OutlinedPencilSquare)
-                                ->schema([
-                                    Textarea::make('note')
-                                        ->hiddenLabel()
-                                        ->placeholder('Nhập ghi chú thêm (nếu có)...')
-                                        ->rows(3),
-                                ]),
                         ]),
+                            Section::make('Thêm sản phẩm')
+                                ->icon(Heroicon::OutlinedCube)
+                                ->description('Chọn sản phẩm, SKU và nhập số lượng')
+                                ->columnSpanFull()
+                                ->schema([
+                                    Repeater::make('items')
+                                        ->relationship()
+                                        ->mutateRelationshipDataBeforeCreateUsing(fn (array $data): array => self::normalizeItem($data))
+                                        ->mutateRelationshipDataBeforeSaveUsing(fn (array $data): array => self::normalizeItem($data))
+                                        ->hiddenLabel()
+                                        ->table([
+                                            TableColumn::make('Sản phẩm')
+                                                ->markAsRequired()
+                                                ->width('25%'),
+                                            TableColumn::make('SKU')
+                                                ->markAsRequired()
+                                                ->width('20%'),
+                                            TableColumn::make('Đơn giá')
+                                                ->markAsRequired()
+                                                ->width('20%'),
+                                            TableColumn::make('Số lượng')
+                                                ->markAsRequired()
+                                                ->width('15%'),
+                                            TableColumn::make('Thành tiền')
+                                                ->markAsRequired()
+                                                ->width('20%'),
+                                        ])
+                                        ->schema([
+                                            Select::make('product_id')
+                                                ->label('Sản phẩm')
+                                                ->options(fn (): array => Product::query()
+                                                    ->where('is_active', true)
+                                                    ->orderBy('name')
+                                                    ->pluck('name', 'id')
+                                                    ->all())
+                                                ->searchable()
+                                                ->preload()
+                                                ->required()
+                                                ->live()
+                                                // Product chỉ dùng để lọc SKU, order_item vẫn lưu product_sku_id.
+                                                ->dehydrated(false)
+                                                ->afterStateHydrated(function ($state, Set $set, Get $get): void {
+                                                    if (blank($state) && filled($get('product_sku_id'))) {
+                                                        $set('product_id', ProductSku::query()->find($get('product_sku_id'))?->product_id);
+                                                    }
+                                                })
+                                                ->afterStateUpdated(function (Set $set, Get $get): void {
+                                                    $set('product_sku_id', null);
+                                                    $set('unit_price', 0);
+                                                    $set('subtotal', 0);
+                                                    self::updateTotals($get, $set);
+                                                }),
+                                            Select::make('product_sku_id')
+                                                ->label('SKU')
+                                                ->options(fn (Get $get): array => ProductSku::query()
+                                                    ->where('product_id', $get('product_id'))
+                                                    ->where('status', 'active')
+                                                    ->orderBy('sku_code')
+                                                    ->pluck('sku_code', 'id')
+                                                    ->all())
+                                                ->searchable()
+                                                ->preload()
+                                                ->disabled(fn (Get $get): bool => blank($get('product_id')))
+                                                ->required()
+                                                ->distinct()
+                                                ->live()
+                                                ->afterStateUpdated(function ($state, Set $set, Get $get): void {
+                                                    $price = ProductSku::query()->find($state)?->price ?? 0;
+
+                                                    $set('unit_price', $price);
+                                                    $set('subtotal', (float) $price * max(1, (int) $get('quantity')));
+                                                    self::updateTotals($get, $set);
+                                                }),
+                                            TextInput::make('unit_price')
+                                                ->label('Đơn giá')
+                                                ->numeric()
+                                                ->minValue(0)
+                                                ->default(0)
+                                                ->suffix('đ')
+                                                ->required()
+                                                ->live(debounce: 300)
+                                                ->afterStateUpdated(function (Get $get, Set $set): void {
+                                                    $set('subtotal', (float) $get('unit_price') * max(1, (int) $get('quantity')));
+                                                    self::updateTotals($get, $set);
+                                                }),
+                                            TextInput::make('quantity')
+                                                ->label('Số lượng')
+                                                ->numeric()
+                                                ->minValue(1)
+                                                ->default(1)
+                                                ->required()
+                                                ->live(debounce: 300)
+                                                ->afterStateUpdated(function (Get $get, Set $set): void {
+                                                    $set('subtotal', (float) $get('unit_price') * max(1, (int) $get('quantity')));
+                                                    self::updateTotals($get, $set);
+                                                }),
+                                            TextInput::make('subtotal')
+                                                ->label('Thành tiền')
+                                                ->numeric()
+                                                ->default(0)
+                                                ->suffix('đ')
+                                                ->readOnly()
+                                                ->dehydrated(),
+                                        ])
+                                        ->defaultItems(1)
+                                        ->minItems(1)
+                                        ->addActionLabel('Thêm sản phẩm')
+                                        ->reorderable(false)
+                                        ->live()
+                                        ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotals($get, $set)),
+                                ]),
+                            Section::make('Tổng tiền')
+                                ->icon(Heroicon::OutlinedBanknotes)
+                                ->columnSpanFull()
+                                ->schema([
+                                    Hidden::make('subtotal')->default(0),
+                                    Hidden::make('total_amount')->default(0),
+                                    Placeholder::make('static_subtotal')
+                                        ->hiddenLabel()
+                                        ->content(fn (Get $get): HtmlString => new HtmlString(sprintf(
+                                            '<div class="flex items-center justify-between gap-4 text-sm"><span class="text-gray-500 dark:text-gray-400">Tạm tính</span><span class="font-medium text-gray-950 dark:text-white">%sđ</span></div>',
+                                            number_format(self::calculateSubtotal($get('items') ?? []), 0, ',', '.'),
+                                        ))),
+                                    Grid::make([
+                                        'default' => 1,
+                                        'sm' => 12,
+                                    ])->schema([
+                                        Placeholder::make('discount_label')
+                                            ->hiddenLabel()
+                                            ->content('Giảm giá')
+                                            ->extraAttributes(['class' => 'flex h-full items-center text-sm text-gray-500 dark:text-gray-400'])
+                                            ->columnSpan([
+                                                'default' => 'full',
+                                                'sm' => 6,
+                                            ]),
+                                        TextInput::make('discount')
+                                            ->hiddenLabel()
+                                            ->numeric()
+                                            ->minValue(0)
+                                            ->default(0)
+                                            ->suffix('đ')
+                                            ->live(debounce: 300)
+                                            ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotals($get, $set))
+                                            ->columnSpan([
+                                                'default' => 'full',
+                                                'sm' => 6,
+                                            ]),
+                                    ]),
+                                    Placeholder::make('static_total')
+                                        ->hiddenLabel()
+                                        ->content(fn (Get $get): HtmlString => new HtmlString(sprintf(
+                                            '<div class="flex items-center justify-between gap-4 border-t border-gray-200 pt-4 dark:border-white/10"><span class="text-base font-bold text-gray-950 dark:text-white">Tổng cộng</span><span class="text-xl font-bold text-primary-600 dark:text-primary-400">%sđ</span></div>',
+                                            number_format(max(0, self::calculateSubtotal($get('items') ?? []) - (float) ($get('discount') ?? 0)), 0, ',', '.'),
+                                        ))),
+                                ]),
                 ]),
         ]);
     }
@@ -294,9 +318,7 @@ class OrderForm
     private static function updateTotals(Get $get, Set $set): void
     {
         $items = $get('items', isAbsolute: true) ?? [];
-        $subtotal = collect($items)->sum(
-            fn (array $item): float => (float) ($item['unit_price'] ?? 0) * max(1, (int) ($item['quantity'] ?? 1)),
-        );
+        $subtotal = self::calculateSubtotal($items);
         $discount = max(0, (float) ($get('discount', isAbsolute: true) ?? 0));
         $shippingFee = max(0, (float) ($get('shipping_fee', isAbsolute: true) ?? 0));
         $vatRate = max(0, (float) ($get('vat_rate', isAbsolute: true) ?? 0));
@@ -305,6 +327,24 @@ class OrderForm
 
         $set('subtotal', round($subtotal, 2), isAbsolute: true);
         $set('total_amount', round($total, 2), isAbsolute: true);
+    }
+
+    /** @param array<int|string, array<string, mixed>> $items */
+    private static function calculateSubtotal(array $items): float
+    {
+        return collect($items)->sum(
+            fn (array $item): float => (float) ($item['unit_price'] ?? 0) * max(1, (int) ($item['quantity'] ?? 1)),
+        );
+    }
+
+    /** @param array<string, mixed> $data */
+    private static function normalizeItem(array $data): array
+    {
+        $data['quantity'] = max(1, (int) ($data['quantity'] ?? 1));
+        $data['unit_price'] = max(0, (float) ($data['unit_price'] ?? 0));
+        $data['subtotal'] = round($data['quantity'] * $data['unit_price'], 2);
+
+        return $data;
     }
 
     private static function customerDetails(mixed $customerId): HtmlString

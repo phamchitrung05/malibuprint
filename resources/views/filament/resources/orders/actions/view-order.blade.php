@@ -3,124 +3,181 @@
     $currentStatus = $orderStatuses[$order->status] ?? [
         'label' => 'Đã hủy',
         'badge_classes' => 'bg-red-500 text-white',
-        'progress_class' => 'bg-red-500',
     ];
-    $statusFlow = array_values(array_filter($orderStatuses, fn (array $status): bool => $status['show_in_progress'] ?? true));
-    $statusStep = array_search($order->status, array_keys($orderStatuses), true);
-    $statusStep = $statusStep === false || $order->status === 'cancelled' ? 0 : $statusStep + 1;
+    $statusFlow = array_filter($orderStatuses, fn (array $status): bool => $status['show_in_progress'] ?? true);
+    $statusIndex = array_search($order->status, array_keys($statusFlow), true);
+    $statusStep = $statusIndex === false ? 0 : $statusIndex + 1;
     $progressWidth = match ($statusStep) {
-        1 => '0%',
         2 => '33.3333%',
         3 => '66.6667%',
         default => '0%',
     };
+    $tabs = [
+        'info' => ['label' => 'Thông tin chung'],
+        'products' => ['label' => 'Sản phẩm', 'count' => $order->items->count()],
+        'payment' => ['label' => 'Thanh toán', 'count' => $order->payments->count()],
+        'shipping' => ['label' => 'Giao hàng'],
+        'history' => ['label' => 'Lịch sử'],
+        'note' => ['label' => 'Ghi chú'],
+        'attachments' => ['label' => 'Tệp đính kèm', 'count' => 2],
+    ];
 @endphp
 
 <div
-    class="h-[calc(100dvh-10rem)] min-h-[520px] space-y-1 overflow-y-auto p-1 text-slate-900">
-    <section class=" border-b border-gray-200 mb-4">
-        <div class="flex flex-wrap items-start justify-between gap-4 px-5 py-4">
-            <div>
-                <div class="flex flex-wrap items-center gap-3"><h2 class="text-2xl font-extrabold tracking-tight">
-                        #{{ $order->order_code }}</h2><span
-                        class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold {{ $currentStatus['badge_classes'] }}"><x-heroicon-o-clock
-                        class="h-4 w-4"/>{{ $currentStatus['label'] }}</span></div>
-                <p class="mt-2 text-sm text-slate-500"><b>Tạo
-                        ngày {{ $order->order_date?->format('d/m/Y H:i') }} </b><span
-                        class="mx-2 text-slate-300">•</span><b> Cập
-                        nhật {{ $order->updated_at?->format('d/m/Y H:i') }}</b></p>
+    x-data="{ activeTab: 'info' }"
+    class="flex min-h-[520px] flex-col overflow-hidden text-slate-900"
+>
+    {{-- Header và tiến trình là thông tin chung nên luôn hiển thị khi chuyển tab. --}}
+    <header class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
+        <div class="min-w-0">
+            <div class="flex items-center gap-3">
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">
+                    Chi tiết đơn hàng #{{ $order->order_code }}
+                </h2>
+                <span class="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold {{ $currentStatus['badge_classes'] }}">
+                    <span class="size-1.5 rounded-full bg-current opacity-70"></span>
+                    {{ $currentStatus['label'] }}
+                </span>
             </div>
-            <div class="flex gap-2">
-                <button type="button" title="In đơn hàng"
-                        class="rounded-lg bg-white p-2.5 text-slate-600">
-                    <x-heroicon-o-printer class="h-5 w-5"/>
-                </button>
+            <p class="mt-1 text-sm text-slate-500">
+                Tạo ngày {{ $order->order_date?->format('d/m/Y H:i') ?? '--/--' }}
+                <span class="mx-2">•</span>
+                Cập nhật lần cuối {{ $order->updated_at?->format('d/m/Y H:i') ?? '--/--' }}
+            </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button type="button" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                <x-heroicon-o-printer class="size-4"/>
+                In đơn hàng
+            </button>
+            <button type="button" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                <x-heroicon-o-document-duplicate class="size-4"/>
+                Sao chép
+            </button>
+            <button type="button" class="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                <x-heroicon-o-arrow-path-rounded-square class="size-4"/>
+                Cập nhật trạng thái
+            </button>
+        </div>
+    </header>
+
+    <section class="shrink-0 border-b border-slate-200 px-6 py-4">
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1.5fr_1fr]">
+            <div class="rounded-xl border border-blue-100 bg-blue-50/50 px-5 py-4">
+                <div class="mb-4 flex items-center gap-2">
+                    <div class="flex size-7 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                        <x-heroicon-o-list-bullet class="size-4"/>
+                    </div>
+                    <span class="text-sm font-semibold text-slate-800">Tiến trình xử lý đơn hàng</span>
+                </div>
+
+                <div class="relative">
+                    <div class="absolute left-[16.6667%] right-[16.6667%] top-4 h-0.5 bg-slate-200"></div>
+                    <div class="absolute left-[16.6667%] top-4 h-0.5 {{ $currentStatus['progress_class'] ?? 'bg-slate-400' }}" style="width: {{ $progressWidth }}"></div>
+                    <div class="relative grid grid-cols-3">
+                        @foreach ($statusFlow as $statusKey => $status)
+                            @php
+                                $step = $loop->iteration;
+                                $isDone = $statusStep > $step;
+                                $isCurrent = $statusStep === $step;
+                                $isReached = $isDone || $isCurrent;
+                            @endphp
+                            <div class="flex flex-col items-center">
+                                <div @class([
+                                    'flex size-8 items-center justify-center rounded-full ring-4 ring-white',
+                                    ($status['progress_class'] ?? 'bg-slate-400').' text-white' => $isReached,
+                                    'bg-white text-slate-400 ring-slate-100' => ! $isReached,
+                                ])>
+                                    @if ($isReached)
+                                        <x-heroicon-s-check class="size-4"/>
+                                    @else
+                                        <span class="size-2 rounded-full bg-current"></span>
+                                    @endif
+                                </div>
+                                <span class="mt-2 text-xs font-semibold {{ $isReached ? ($status['label_classes'] ?? 'text-slate-800') : 'text-slate-400' }}">{{ $status['label'] }}</span>
+                                <span class="mt-0.5 text-[11px] text-slate-400">
+                                    {{ $isCurrent ? 'Đang thực hiện' : ($isDone ? 'Đã hoàn thành' : 'Chưa thực hiện') }}
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-lime-400 bg-emerald-50/50 px-5 py-4">
+                <div class="mb-4 flex items-center gap-2">
+                    <div class="flex size-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                        <x-heroicon-o-clipboard-document-check class="size-4"/>
+                    </div>
+                    <span class="text-sm font-semibold text-slate-800">Giao hàng và thanh toán</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex min-w-0 items-center gap-3">
+                        <div @class([
+                            'flex size-10 shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1',
+                            'text-emerald-600 ring-emerald-300' => $order->is_delivered,
+                            'text-slate-400 ring-slate-200' => ! $order->is_delivered,
+                        ])>
+                            <x-heroicon-o-truck class="size-5"/>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800">Giao hàng</p>
+                            <p class="mt-0.5 text-xs text-slate-500">{{ $order->is_delivered ? 'Đã giao' : 'Chưa giao' }}</p>
+                        </div>
+                    </div>
+                    <div class="flex min-w-0 items-center gap-3">
+                        <div @class([
+                            'flex size-10 shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1',
+                            'text-emerald-600 ring-emerald-300' => $order->is_paid,
+                            'text-slate-400 ring-slate-200' => ! $order->is_paid,
+                        ])>
+                            <x-heroicon-o-credit-card class="size-5"/>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800">Thanh toán</p>
+                            <p class="mt-0.5 text-xs text-slate-500">{{ $order->is_paid ? 'Đã thanh toán' : 'Chưa thanh toán' }}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <div class="mb-4 bg-gray-100 p-2 rounded-2xl">
-        <div class="relative grid grid-cols-3 text-center text-xs font-bold text-slate-500 before:absolute before:left-[16.6667%] before:right-[16.6667%] before:top-4 before:h-0.5 before:-translate-y-1/2 before:bg-slate-200">
-            <span class="absolute left-[16.6667%] top-4 z-0 h-0.5 {{ $currentStatus['progress_class'] }}" style="width: {{ $progressWidth }}"></span>
-            @foreach ($statusFlow as $index => $status)
-                @php($stepNumber = $index + 1)
-                @php($isReached = $stepNumber <= $statusStep)
-                <div class="relative z-10">
-                    <div class="mx-auto mb-3 flex h-8 w-8 items-center justify-center rounded-full {{ $isReached ? $status['badge_classes'] : 'bg-slate-300 text-slate-400' }} {{ $stepNumber === $statusStep ? 'ring-8 ring-blue-100' : '' }}">
-                        @if ($stepNumber === 3)
-                            <x-heroicon-s-printer class="h-5 w-5" />
-                        @else
-                            <x-heroicon-s-check class="h-5 w-5" />
-                        @endif
-                    </div>
-                    <b class="text-sm {{ $stepNumber === $statusStep ? ($status['label_classes'] ?? '') : '' }}">{{ $status['label'] }}</b>
-                    <span class="test-sm block font-normal">{{ $isReached ? $order->order_date?->format('d/m H:i') : '--/--' }}</span>
-                </div>
-            @endforeach
-        </div>
-    </div>
+    {{-- Điều hướng chỉ đổi nội dung trong vùng tab, không đóng hoặc tải lại modal. --}}
+    <nav class="flex shrink-0 items-center gap-7 overflow-x-auto border-b border-slate-200 px-6" aria-label="Chi tiết đơn hàng">
+        @foreach ($tabs as $tabKey => $tab)
+            <button
+                type="button"
+                @click="activeTab = '{{ $tabKey }}'"
+                :aria-selected="activeTab === '{{ $tabKey }}'"
+                :class="activeTab === '{{ $tabKey }}' ? 'border-blue-600 font-semibold text-blue-600' : 'border-transparent font-medium text-slate-500 hover:text-slate-800'"
+                class="shrink-0 border-b-2 px-1 py-3 text-sm transition"
+                role="tab"
+            >
+                {{ $tab['label'] }}
+                @isset($tab['count'])
+                    <span class="ml-1 text-xs text-slate-400">({{ $tab['count'] }})</span>
+                @endisset
+            </button>
+        @endforeach
+    </nav>
 
-    <div class="mb-4 grid grid-cols-2 gap-4 rounded-2xl bg-gray-100 p-2 text-center">
-        <div>
-            <div class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full {{ $order->is_paid ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-400' }}">
-                <x-heroicon-o-banknotes class="h-5 w-5" />
+    <main class="min-h-0 flex-1 overflow-y-auto bg-slate-50/60 p-5">
+        @foreach (array_keys($tabs) as $tabKey)
+            <div x-show="activeTab === '{{ $tabKey }}'" x-cloak role="tabpanel">
+                @include('filament.resources.orders.actions.tabs.'.$tabKey)
             </div>
-            <b class="text-sm {{ $order->is_paid ? 'text-emerald-600' : 'text-slate-500' }}">Đã thanh toán</b>
-            <span class="block text-xs font-normal text-slate-400">--/--</span>
-        </div>
-        <div>
-            <div class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full {{ $order->is_delivered ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-400' }}">
-                <x-heroicon-o-truck class="h-5 w-5" />
-            </div>
-            <b class="text-sm {{ $order->is_delivered ? 'text-blue-600' : 'text-slate-500' }}">Đã giao hàng</b>
-            <span class="block text-xs font-normal text-slate-400">--/--</span>
-        </div>
-    </div>
+        @endforeach
+    </main>
 
-    <div class="mb-4">
-        <livewire:order-detail-panel :order-id="$order->id"/>
-    </div>
-
-    @php($money = fn ($value): string => number_format((float) $value, 0, ',', '.').'đ')
-    <div class="mb-1 grid gap-3 lg:grid-cols-2 mb-4">
-        <section class="rounded-2xl border border-gray-100 bg-white shadow-2xs shadow-gray-200">
-            <h3 class="border-b border-gray-200 p-3 text-lg font-extrabold">Ghi chú đơn hàng</h3>
-            <div
-                class="p-5 mt-4 whitespace-pre-line rounded-lg bg-lime-100 font-medium p-4 text-sm leading-7 text-slate-700">{{ $order->note ?: "• Màu sắc theo file thiết kế đã gửi\n• Cán mờ 2 mặt\n• Giao hàng trước thứ 7" }}</div>
-        </section>
-        <section class="rounded-2xl border border-gray-100 bg-gray-50 shadow-2xs shadow-gray-200"><h3
-                class="border-b border-gray-200 p-3 text-lg font-extrabold">Tổng
-                tiền</h3>
-            <dl class="p-5 mt-4 grid gap-3 text-sm">
-                <div class="flex justify-between">
-                    <dt class="text-sm text-gray-500">Tạm tính</dt>
-                    <dd class="text-base font-bold">{{ $money($order->subtotal) }}</dd>
-                </div>
-                <div class="flex justify-between">
-                    <dt class="text-sm text-slate-500">Giảm giá</dt>
-                    <dd class="text-base font-bold">- {{ $money($order->discount) }}</dd>
-                </div>
-                <div class="flex justify-between">
-                    <dt class="text-sm text-gray-500">Phí vận chuyển</dt>
-                    <dd class="text-base font-bold">0đ</dd>
-                </div>
-                <div class="flex justify-between border-t border-gray-200 pt-3 text-base font-extrabold">
-                    <dt>Tổng cộng</dt>
-                    <dd class="text-xl text-blue-600">{{ $money($order->total_amount) }}</dd>
-                </div>
-            </dl>
-        </section>
-    </div>
-
-    <footer class="flex flex-wrap gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-2xs shadow-gray-200">
-        <button type="button" wire:click="$dispatch('order-cancel')"
-                class="min-w-[120px] flex-1 rounded-lg border border-slate-100 bg-slate-50 px-5 py-3 font-bold text-slate-700">
-            Hủy đơn
+    <footer class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-6 py-3">
+        <button type="button" class="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50">
+            Hủy đơn hàng
         </button>
-        <button type="button" wire:click="$dispatch('order-complete')"
-                class="min-w-[180px] flex-[2] rounded-lg bg-blue-600 px-5 py-3 font-bold text-white shadow-2xs shadow-gray-200 transition hover:bg-blue-700">
-            Cập nhật trạng thái
-            <x-heroicon-o-chevron-down class="ml-2 inline h-4 w-4"/>
+        <button type="button" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+            <x-heroicon-o-printer class="size-4"/>
+            In đơn hàng
         </button>
     </footer>
 </div>

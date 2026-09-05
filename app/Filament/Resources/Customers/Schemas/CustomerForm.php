@@ -10,6 +10,7 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class CustomerForm
@@ -87,7 +88,9 @@ class CustomerForm
                                 ->schema([
                                     TextInput::make('last_order')
                                         ->label('Đơn hàng gần nhất')
-                                        ->formatStateUsing(fn ($state): string => $state?->format('d/m/Y H:i') ?? 'Chưa có đơn hàng')
+                                        ->formatStateUsing(fn ($state): string => filled($state)
+                                            ? Carbon::parse($state)->format('d/m/Y H:i')
+                                            : 'Chưa có đơn hàng')
                                         ->disabled()
                                         ->dehydrated(false),
                                 ]),

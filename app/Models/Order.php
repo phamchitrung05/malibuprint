@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Spatie\Activitylog\Models\Activity;
 
 class Order extends Model
 {
@@ -34,5 +36,27 @@ class Order extends Model
     public function shipping(): HasMany
     {
         return $this->hasMany(Shipping::class);
+    }
+
+    public function activities(): MorphMany
+    {
+        return $this->morphMany(Activity::class, 'subject')->latest();
+    }
+
+    /**
+     * Tính lại số tiền từ các dòng sản phẩm thay vì tin vào giá trị hidden từ trình duyệt.
+     */
+    public function recalculateTotals(): void
+    {
+        $subtotal = (float) $this->items()
+            ->selectRaw('COALESCE(SUM(quantity * unit_price), 0) as total')
+            ->value('total');
+        $discount = min(max(0, (float) $this->discount), $subtotal);
+
+        $this->forceFill([
+            'subtotal' => $subtotal,
+            'discount' => $discount,
+            'total_amount' => max(0, $subtotal - $discount),
+        ])->saveQuietly();
     }
 }

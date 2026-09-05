@@ -11,11 +11,6 @@ class EditProduct extends EditRecord
 {
     protected static string $resource = ProductResource::class;
 
-    public function getMaxContentWidth(): Width
-    {
-        return Width::Full;
-    }
-
     protected function getHeaderActions(): array
     {
         return [

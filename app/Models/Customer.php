@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
+    public const UPDATED_AT = null;
+
     protected $table = 'customers';
     protected $fillable = ['uuid', 'name', 'phone', 'address', 'note', 'is_active', 'last_order'];
 

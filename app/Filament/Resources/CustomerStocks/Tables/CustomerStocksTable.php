@@ -2,9 +2,12 @@
 
 namespace App\Filament\Resources\CustomerStocks\Tables;
 
+use App\Models\CustomerStock;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 
@@ -23,7 +26,21 @@ class CustomerStocksTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                Action::make('releaseStock')
+                    ->label('Xuất kho')
+                    ->tooltip('Xuất kho')
+                    ->iconButton()
+                    ->icon(Heroicon::OutlinedArrowUpTray)
+                    ->color('success')
+                    ->modalHeading('Xuất kho khách hàng')
+                    ->modalContent(fn (CustomerStock $record) => view('filament.resources.customer-stocks.actions.release-stock', [
+                        'customerStock' => $record,
+                    ]))
+                    ->modalWidth('7xl')
+                    ->modalSubmitAction(false),
+                EditAction::make()
+                    ->iconButton()
+                    ->icon(Heroicon::OutlinedPencilSquare),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

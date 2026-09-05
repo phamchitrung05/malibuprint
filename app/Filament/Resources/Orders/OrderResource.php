@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class OrderResource extends Resource
@@ -32,6 +33,15 @@ class OrderResource extends Resource
     public static function table(Table $table): Table
     {
         return OrdersTable::configure($table);
+    }
+
+    /**
+     * Đơn hoàn thành hoặc đã hủy chỉ được xem, thanh toán và giao hàng; không sửa nội dung.
+     */
+    public static function canEdit(Model $record): bool
+    {
+        return ! in_array($record->status, ['completed', 'cancelled'], true)
+            && parent::canEdit($record);
     }
 
     public static function getRelations(): array

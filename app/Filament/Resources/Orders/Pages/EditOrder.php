@@ -11,9 +11,12 @@ class EditOrder extends EditRecord
 {
     protected static string $resource = OrderResource::class;
 
-    public function getMaxContentWidth(): Width
+
+    protected function authorizeAccess(): void
     {
-        return Width::Full;
+        parent::authorizeAccess();
+
+        abort_if(in_array($this->record->status, ['completed', 'cancelled'], true), 403);
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
@@ -29,6 +32,11 @@ class EditOrder extends EditRecord
         );
 
         return $data;
+    }
+
+    protected function afterSave(): void
+    {
+        $this->record->recalculateTotals();
     }
 
     protected function getHeaderActions(): array

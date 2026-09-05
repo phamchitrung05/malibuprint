@@ -9,6 +9,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // SQLite đã giữ đúng khóa ngoại qua thao tác đổi tên và không hỗ trợ cú pháp MySQL bên dưới.
+        if (DB::getDriverName() !== 'mysql') {
+            return;
+        }
+
         // Sửa các khóa ngoại còn trỏ tới tên bảng cũ customer sau khi đổi sang customers.
         // MySQL chỉ cho phép khóa ngoại khi bảng cha dùng InnoDB.
         DB::statement('ALTER TABLE customers ENGINE=InnoDB');

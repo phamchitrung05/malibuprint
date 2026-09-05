@@ -55,4 +55,10 @@ class CreateOrder extends CreateRecord
             return Order::create($data);
         });
     }
+
+    protected function afterCreate(): void
+    {
+        // Repeater lưu order_item sau Order, nên tổng tiền được chốt lại khi quan hệ đã lưu xong.
+        $this->record->recalculateTotals();
+    }
 }
