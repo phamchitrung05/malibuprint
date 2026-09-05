@@ -78,6 +78,7 @@ class OrderDetailPanel extends Component implements HasSchemas
     {
         return view('filament.resources.orders.actions.order-detail-panel', [
             'order' => $this->order(),
+            'orderStatuses' => config('order.statuses'),
         ]);
     }
 

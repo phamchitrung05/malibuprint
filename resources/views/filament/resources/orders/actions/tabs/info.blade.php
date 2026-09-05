@@ -1,15 +1,15 @@
 <div class="grid gap-3 lg:grid-cols-2">
-    <section class="rounded-2xl border border border-slate-100 shadow-sm">
-        <h3 class="pb-2 p-3 rounded-t-2xl bg-cyan-100 border-b border-slate-50 text-lg font-extrabold">Thông tin
+    <section class="rounded-2xl border border-gray-100 shadow-2xs shadow-gray-200">
+        <h3 class="pb-2 rounded-t-2xl border-b border-gray-200 p-3 text-lg font-extrabold">Thông tin
             khách hàng</h3>
        <div class="p-5">
            <div class="flex items-center gap-3">
                <div
                    class="flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 text-xl font-extrabold text-blue-600">{{ mb_strtoupper(mb_substr($order->customer?->name ?? 'NB', 0, 2)) }}</div>
-               <div><p class="font-extrabold">{{ $order->customer?->name ?? 'Chưa có khách hàng' }}</p>
-                   <p class="text-sm text-slate-500">Công ty XYZ</p></div>
+               <div><p class="text-base font-bold">{{ $order->customer?->name ?? 'Chưa có khách hàng' }}</p>
+               </div>
            </div>
-           <div class="mt-5 grid gap-3 text-sm">
+           <div class="mt-5 grid gap-3 text-base font-bold">
                <p>
                    <x-heroicon-o-phone
                        class="mr-2 inline h-5 w-5"/>{{ $order->customer?->phone ?? 'Chưa có số điện thoại' }}</p>
@@ -19,9 +19,9 @@
            </div>
        </div>
     </section>
-    <section class="rounded-2xl border border border-slate-100 bg-white shadow-sm">
+    <section class="rounded-2xl border border-gray-100  shadow-2xs shadow-gray-200">
         <h3
-            class="pb-2 p-3 rounded-t-2xl bg-sky-100 border-b border-slate-50 text-lg font-extrabold">
+            class="pb-2 p-3 rounded-t-2xl border-b border-gray-200 text-lg font-extrabold">
             Thông tin
             đơn hàng
         </h3>

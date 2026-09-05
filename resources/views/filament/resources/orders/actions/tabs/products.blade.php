@@ -1,6 +1,6 @@
-<section class="mb-1 rounded-2xl border border-purple-100 bg-white p-5 shadow-sm"><h3 class="text-lg font-extrabold">Danh sách
+<section class="mb-1 rounded-2xl border border-gray-100 p-5 shadow-2xs shadow-gray-200"><h3 class="text-lg font-extrabold">Danh sách
         sản phẩm ({{ $order->items->count() }})</h3>
-    <div class="mt-4 overflow-x-auto rounded-xl border-2 border-purple-100">
+    <div class="mt-4 overflow-x-auto rounded-xl border-2 border-gray-200">
         <table class="w-full min-w-[600px] text-left text-sm">
             <thead class="border-b-2 border-purple-100 bg-slate-50">
             <tr>
@@ -11,7 +11,7 @@
                 <th class="px-3 py-3">Thành tiền</th>
             </tr>
             </thead>
-            <tbody class="divide-y-2 divide-purple-100">@foreach ($order->items as $index => $item)
+            <tbody class="divide-y-2 divide-gray-100">@foreach ($order->items as $index => $item)
                 <tr>
                     <td class="px-3 py-3">{{ $index + 1 }}</td>
                     <td class="px-3 py-3 font-bold">{{ $item->productSku?->product?->name ?? 'Sản phẩm' }}</td>
