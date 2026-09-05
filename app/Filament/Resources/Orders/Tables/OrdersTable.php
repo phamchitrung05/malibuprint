@@ -2,9 +2,13 @@
 
 namespace App\Filament\Resources\Orders\Tables;
 
+use App\Models\Order;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
 
@@ -24,7 +28,21 @@ class OrdersTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                ViewAction::make()
+                    ->iconButton()
+                    ->icon(Heroicon::OutlinedEye)
+                    ->schema([])
+                    ->modalHeading('')
+                    ->modalWidth('7xl')
+                    ->modalContent(fn (Order $record) => view('filament.resources.orders.actions.view-order', [
+                        'order' => $record,
+                    ])),
+                EditAction::make()
+                    ->iconButton()
+                    ->icon(Heroicon::OutlinedPencilSquare),
+                DeleteAction::make()
+                    ->iconButton()
+                    ->icon(Heroicon::OutlinedTrash),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

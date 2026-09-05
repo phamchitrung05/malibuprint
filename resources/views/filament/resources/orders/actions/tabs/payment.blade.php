@@ -1,0 +1,1 @@
+<section class="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-sm"><h3 class="font-extrabold">Thanh toán</h3><div class="mt-4 rounded-lg bg-emerald-50 p-4 text-sm font-semibold text-emerald-700"><x-heroicon-o-check-circle class="mr-2 inline h-5 w-5" />{{ $order->is_paid ? 'Đã thanh toán' : 'Chưa thanh toán' }}</div></section>
