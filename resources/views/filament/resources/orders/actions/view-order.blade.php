@@ -115,9 +115,9 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex min-w-0 items-center gap-3">
                         <div @class([
-                            'flex size-10 shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1',
-                            'text-emerald-600 ring-emerald-300' => $order->is_delivered,
-                            'text-slate-400 ring-slate-200' => ! $order->is_delivered,
+                            'flex size-10 shrink-0 items-center justify-center rounded-full shadow-sm ring-1',
+                            'bg-blue-600 text-white ring-blue-600' => $order->is_delivered,
+                            'bg-white text-slate-400 ring-slate-200' => ! $order->is_delivered,
                         ])>
                             <x-heroicon-o-truck class="size-5"/>
                         </div>
@@ -128,9 +128,9 @@
                     </div>
                     <div class="flex min-w-0 items-center gap-3">
                         <div @class([
-                            'flex size-10 shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1',
-                            'text-emerald-600 ring-emerald-300' => $order->is_paid,
-                            'text-slate-400 ring-slate-200' => ! $order->is_paid,
+                            'flex size-10 shrink-0 items-center justify-center rounded-full shadow-sm ring-1',
+                            'bg-blue-600 text-white ring-blue-600' => $order->is_paid,
+                            'bg-white text-slate-400 ring-slate-200' => ! $order->is_paid,
                         ])>
                             <x-heroicon-o-credit-card class="size-5"/>
                         </div>
