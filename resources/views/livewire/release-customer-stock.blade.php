@@ -1,1143 +1,394 @@
-{{-- Khung giao diện xuất kho sẽ được hoàn thiện theo thiết kế riêng. --}}
-<div class="min-h-40">
 
-
-    <!-- =========================================================
-     MODAL XUẤT KHO CHO KHÁCH HÀNG
-     Tailwind CSS 4
-========================================================= -->
-            <!-- =====================================================
-                 HEADER
-            ====================================================== -->
-
-            <header class="shrink-0 border-b border-slate-200 px-6 py-4">
-
-                <div class="flex items-center justify-between">
-
-                    <div class="flex items-center gap-3">
-
-                        <div
-                            class="flex size-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600"
-                        >
-                            <svg
-                                class="size-6"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="1.8"
-                                viewBox="0 0 24 24"
-                            >
-                                <path d="M12 3v12"/>
-                                <path d="m7 10 5 5 5-5"/>
-                                <path d="M5 21h14"/>
-                            </svg>
-                        </div>
-
-                        <div>
-
-                            <h2 class="text-xl font-bold tracking-tight text-slate-900">
-                                Xuất kho cho khách hàng
-                            </h2>
-
-                            <p class="mt-0.5 text-xs text-slate-500">
-                                Chọn đơn hàng và nhập số lượng sản phẩm cần xuất cho khách hàng.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    <button
-                        type="button"
-                        class="flex size-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+    <div
+        class="release-stock-modal flex min-h-[520px] flex-col overflow-hidden text-slate-900"
+    >
+        <!-- Header -->
+        <div class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
+            <div class="flex items-center gap-3">
+                <!-- Truck icon -->
+                <div class="flex size-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        class="size-6"
                     >
-                        <svg
-                            class="size-5"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                            viewBox="0 0 24 24"
-                        >
-                            <path d="m6 6 12 12"/>
-                            <path d="M18 6 6 18"/>
-                        </svg>
-                    </button>
-
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M3 6.75A1.75 1.75 0 0 1 4.75 5h9.5A1.75 1.75 0 0 1 16 6.75V17H3V6.75Z"
+                        />
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M16 9h2.3c.6 0 1.16.3 1.48.82L21 12v5h-5V9Z"
+                        />
+                        <circle cx="7" cy="18" r="2" />
+                        <circle cx="18" cy="18" r="2" />
+                    </svg>
                 </div>
 
-            </header>
-
-
-            <!-- =====================================================
-                 MODE
-            ====================================================== -->
-
-            <div class="shrink-0 px-5 pt-4">
-
-                <div class="grid grid-cols-2 gap-3">
-
-                    <!-- ACTIVE -->
-
-                    <button
-                        type="button"
-                        class="flex items-center gap-4 rounded-xl border border-blue-500 bg-blue-50/40 px-5 py-3.5 text-left ring-1 ring-blue-500/10"
-                    >
-
-                        <div
-                            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600"
-                        >
-                            <svg
-                                class="size-5"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="1.8"
-                                viewBox="0 0 24 24"
-                            >
-                                <path d="M4 4h16v16H4z"/>
-                                <path d="M8 8h8M8 12h5M8 16h3"/>
-                            </svg>
-                        </div>
-
-                        <div>
-
-                            <p class="text-sm font-bold text-blue-700">
-                                Theo đơn hàng
-                            </p>
-
-                            <p class="mt-0.5 text-xs text-slate-500">
-                                Chọn đơn hàng đã hoàn thành, xuất toàn bộ hoặc một phần.
-                            </p>
-
-                        </div>
-
-                    </button>
-
-
-                    <!-- MANUAL -->
-
-                    <button
-                        type="button"
-                        class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-left transition hover:border-blue-200 hover:bg-slate-50"
-                    >
-
-                        <div
-                            class="flex size-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500"
-                        >
-                            <svg
-                                class="size-5"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="1.8"
-                                viewBox="0 0 24 24"
-                            >
-                                <circle cx="12" cy="12" r="8"/>
-                                <path d="M12 8v8M8 12h8"/>
-                            </svg>
-                        </div>
-
-                        <div>
-
-                            <p class="text-sm font-bold text-slate-700">
-                                Nhập sản phẩm thủ công
-                            </p>
-
-                            <p class="mt-0.5 text-xs text-slate-500">
-                                Thêm sản phẩm từ kho để xuất hàng.
-                            </p>
-
-                        </div>
-
-                    </button>
-
+                <div>
+                    <h2 class="text-xl leading-tight font-bold tracking-tight text-slate-950">
+                        Xuất hàng cho khách
+                    </h2>
+                    <p class="mt-1 text-sm text-slate-500">
+                        Xem thông tin khách hàng và danh sách hàng còn tồn.
+                    </p>
                 </div>
-
             </div>
-
-
-            <!-- =====================================================
-                 BODY
-            ====================================================== -->
-
-            <div class="min-h-0 flex-1 overflow-hidden p-5">
-
-                <div class="grid h-full min-h-0 grid-cols-[minmax(0,1fr)_340px] gap-4">
-
-
-                    <!-- =================================================
-                         LEFT — ORDERS
-                    ================================================== -->
-
-
-                    <div class="overflow-x-auto">
-
-                        <table class="w-full min-w-[900px] text-left">
-
-                            <thead class="border-b border-slate-100 bg-slate-50/70">
-
-                            <tr class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-
-                                <th class="w-12 px-4 py-3">
-                                    #
-                                </th>
-
-                                <th class="px-3 py-3">
-                                    Sản phẩm
-                                </th>
-
-                                <th class="px-3 py-3">
-                                    SKU
-                                </th>
-
-                                <th class="px-3 py-3">
-                                    Quy cách
-                                </th>
-
-                                <th class="px-3 py-3">
-                                    Tồn kho
-                                </th>
-
-                                <th class="px-3 py-3">
-                                    Số lượng xuất
-                                </th>
-
-                                <th class="px-3 py-3">
-                                    ĐVT
-                                </th>
-
-                                <th class="px-3 py-3">
-                                    Ghi chú
-                                </th>
-
-                                <th class="w-12 px-3 py-3"></th>
-
-                            </tr>
-
-                            </thead>
-
-
-                            <tbody class="divide-y divide-slate-100">
-
-
-                            <!-- PRODUCT 1 -->
-
-                            <tr class="group hover:bg-slate-50/60">
-
-                                <td class="px-4 py-3 text-xs text-slate-400">
-                                    1
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <div class="flex items-center gap-2.5">
-
-                                        <div class="size-10 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-
-                                            <img
-                                                src="https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=100&q=80"
-                                                class="size-full object-cover"
-                                            >
-
-                                        </div>
-
-                                        <div class="min-w-0">
-
-                                            <p class="text-xs font-semibold text-slate-800">
-                                                Card visit
-                                            </p>
-
-                                            <p class="mt-0.5 text-[10px] text-slate-400">
-                                                Giấy C300, cán mờ 2 mặt
-                                            </p>
-
-                                        </div>
-
-                                    </div>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                            <span class="text-xs font-semibold text-slate-600">
-                                                DT-001
-                                            </span>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                            <span class="text-xs text-slate-600">
-                                                9 × 5.4 cm
-                                            </span>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                            <span class="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-600">
-                                                <span class="size-1.5 rounded-full bg-emerald-500"></span>
-                                                1.500
-                                            </span>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <input
-                                        type="number"
-                                        value="1000"
-                                        class="h-9 w-24 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10"
-                                    >
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <button
-                                        class="flex h-9 min-w-16 items-center justify-between gap-2 rounded-lg border border-slate-200 px-2.5 text-xs text-slate-600"
-                                    >
-                                        tờ
-
-                                        <svg class="size-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path d="m6 9 6 6 6-6"/>
-                                        </svg>
-
-                                    </button>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <input
-                                        type="text"
-                                        placeholder="Ghi chú..."
-                                        class="h-9 w-full min-w-[120px] rounded-lg border border-slate-200 px-3 text-xs outline-none placeholder:text-slate-400 focus:border-blue-500"
-                                    >
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <button
-                                        class="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500"
-                                    >
-
-                                        <svg
-                                            class="size-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="1.8"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path d="M4 7h16"/>
-                                            <path d="M10 11v6M14 11v6"/>
-                                            <path d="M6 7l1 14h10l1-14"/>
-                                            <path d="M9 7V4h6v3"/>
-                                        </svg>
-
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-
-                            <!-- PRODUCT 2 -->
-
-                            <tr class="group hover:bg-slate-50/60">
-
-                                <td class="px-4 py-3 text-xs text-slate-400">
-                                    2
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <div class="flex items-center gap-2.5">
-
-                                        <div class="size-10 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-
-                                            <img
-                                                src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=100&q=80"
-                                                class="size-full object-cover"
-                                            >
-
-                                        </div>
-
-                                        <div>
-
-                                            <p class="text-xs font-semibold text-slate-800">
-                                                Tờ rơi A5
-                                            </p>
-
-                                            <p class="mt-0.5 text-[10px] text-slate-400">
-                                                Giấy C150, không cán
-                                            </p>
-
-                                        </div>
-
-                                    </div>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-                                            <span class="text-xs font-semibold text-slate-600">
-                                                TR-001
-                                            </span>
-                                </td>
-
-
-                                <td class="px-3 py-3">
-                                            <span class="text-xs text-slate-600">
-                                                14.8 × 21 cm
-                                            </span>
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                            <span class="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-600">
-                                                <span class="size-1.5 rounded-full bg-emerald-500"></span>
-                                                2.800
-                                            </span>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <input
-                                        type="number"
-                                        value="2000"
-                                        class="h-9 w-24 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10"
-                                    >
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <button
-                                        class="flex h-9 min-w-16 items-center justify-between gap-2 rounded-lg border border-slate-200 px-2.5 text-xs text-slate-600"
-                                    >
-                                        tờ
-                                        <svg class="size-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path d="m6 9 6 6 6-6"/>
-                                        </svg>
-                                    </button>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <input
-                                        type="text"
-                                        placeholder="Ghi chú..."
-                                        class="h-9 w-full min-w-[120px] rounded-lg border border-slate-200 px-3 text-xs outline-none placeholder:text-slate-400 focus:border-blue-500"
-                                    >
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <button class="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500">
-
-                                        <svg class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                            <path d="M4 7h16"/>
-                                            <path d="M10 11v6M14 11v6"/>
-                                            <path d="M6 7l1 14h10l1-14"/>
-                                            <path d="M9 7V4h6v3"/>
-                                        </svg>
-
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-
-                            <!-- PRODUCT 3 -->
-
-                            <tr class="group hover:bg-slate-50/60">
-
-                                <td class="px-4 py-3 text-xs text-slate-400">
-                                    3
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <div class="flex items-center gap-2.5">
-
-                                        <div class="size-10 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-
-                                            <img
-                                                src="https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=100&q=80"
-                                                class="size-full object-cover"
-                                            >
-
-                                        </div>
-
-                                        <div>
-
-                                            <p class="text-xs font-semibold text-slate-800">
-                                                Poster A2
-                                            </p>
-
-                                            <p class="mt-0.5 text-[10px] text-slate-400">
-                                                Giấy C200, cán mờ
-                                            </p>
-
-                                        </div>
-
-                                    </div>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-                                            <span class="text-xs font-semibold text-slate-600">
-                                                PO-001
-                                            </span>
-                                </td>
-
-
-                                <td class="px-3 py-3">
-                                            <span class="text-xs text-slate-600">
-                                                42 × 59.4 cm
-                                            </span>
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                            <span class="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-600">
-                                                <span class="size-1.5 rounded-full bg-emerald-500"></span>
-                                                600
-                                            </span>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <input
-                                        type="number"
-                                        value="500"
-                                        class="h-9 w-24 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10"
-                                    >
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <button
-                                        class="flex h-9 min-w-16 items-center justify-between gap-2 rounded-lg border border-slate-200 px-2.5 text-xs text-slate-600"
-                                    >
-                                        tờ
-
-                                        <svg class="size-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path d="m6 9 6 6 6-6"/>
-                                        </svg>
-
-                                    </button>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <input
-                                        type="text"
-                                        placeholder="Ghi chú..."
-                                        class="h-9 w-full min-w-[120px] rounded-lg border border-slate-200 px-3 text-xs outline-none placeholder:text-slate-400 focus:border-blue-500"
-                                    >
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <button class="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500">
-
-                                        <svg class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                            <path d="M4 7h16"/>
-                                            <path d="M10 11v6M14 11v6"/>
-                                            <path d="M6 7l1 14h10l1-14"/>
-                                            <path d="M9 7V4h6v3"/>
-                                        </svg>
-
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-
-                            <!-- PRODUCT 4 -->
-
-                            <tr class="group hover:bg-slate-50/60">
-
-                                <td class="px-4 py-3 text-xs text-slate-400">
-                                    4
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <div class="flex items-center gap-2.5">
-
-                                        <div class="size-10 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-
-                                            <img
-                                                src="https://images.unsplash.com/photo-1561070791-2526d30994b5?w=100&q=80"
-                                                class="size-full object-cover"
-                                            >
-
-                                        </div>
-
-                                        <div>
-
-                                            <p class="text-xs font-semibold text-slate-800">
-                                                Standee 0.6×1.6m
-                                            </p>
-
-                                            <p class="mt-0.5 text-[10px] text-slate-400">
-                                                Bạt Hiflex
-                                            </p>
-
-                                        </div>
-
-                                    </div>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-                                            <span class="text-xs font-semibold text-slate-600">
-                                                ST-001
-                                            </span>
-                                </td>
-
-
-                                <td class="px-3 py-3">
-                                            <span class="text-xs text-slate-600">
-                                                60 × 160 cm
-                                            </span>
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                            <span class="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-600">
-                                                <span class="size-1.5 rounded-full bg-amber-500"></span>
-                                                25
-                                            </span>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <input
-                                        type="number"
-                                        value="10"
-                                        class="h-9 w-24 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10"
-                                    >
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <button
-                                        class="flex h-9 min-w-16 items-center justify-between gap-2 rounded-lg border border-slate-200 px-2.5 text-xs text-slate-600"
-                                    >
-                                        cái
-
-                                        <svg class="size-3 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path d="m6 9 6 6 6-6"/>
-                                        </svg>
-
-                                    </button>
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <input
-                                        type="text"
-                                        value="Giao đủ 10 cái"
-                                        class="h-9 w-full min-w-[120px] rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-blue-500"
-                                    >
-
-                                </td>
-
-
-                                <td class="px-3 py-3">
-
-                                    <button class="flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500">
-
-                                        <svg class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                            <path d="M4 7h16"/>
-                                            <path d="M10 11v6M14 11v6"/>
-                                            <path d="M6 7l1 14h10l1-14"/>
-                                            <path d="M9 7V4h6v3"/>
-                                        </svg>
-
-                                    </button>
-
-                                </td>
-
-                            </tr>
-
-                            </tbody>
-
-                        </table>
-
+        </div>
+
+        <!-- Content -->
+        <div class="min-h-0 flex-1 overflow-y-auto bg-slate-50/60 p-5">
+            <!-- Customer card -->
+            <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-start gap-4">
+                    <div
+                        class="flex size-16 shrink-0 items-center justify-center rounded-full bg-blue-50 text-lg font-bold text-blue-600"
+                    >
+                        KH
                     </div>
 
-                    <!-- =================================================
-                         RIGHT SIDEBAR
-                    ================================================== -->
+                    <div class="min-w-0 flex-1">
+                        <h3 class="mb-3 text-lg font-bold text-slate-950">
+                            Công ty TNHH An Phát
+                        </h3>
 
-                    <aside class="min-h-0 space-y-4 overflow-y-auto">
-
-
-                        <!-- =================================================
-                             CUSTOMER
-                        ================================================== -->
-
-                        <div class="rounded-xl border border-slate-200 bg-white p-4">
-
-                            <div class="mb-4 flex items-center justify-between">
-
-                                <div class="flex items-center gap-2">
-
-                                    <span class="h-5 w-0.5 rounded-full bg-blue-600"></span>
-
-                                    <h3 class="text-sm font-bold text-slate-900">
-                                        Thông tin khách hàng
-                                    </h3>
-
-                                </div>
-
-
-                                <button
-                                    class="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[10px] font-medium text-slate-600 hover:bg-slate-50"
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center gap-3">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    class="size-4 shrink-0 text-slate-500"
                                 >
-                                    Chỉnh sửa
-                                </button>
-
+                                    <circle cx="12" cy="7.5" r="3.5" />
+                                    <path stroke-linecap="round" d="M5.5 20c.7-4 3-6 6.5-6s5.8 2 6.5 6" />
+                                </svg>
+                                <div>
+                                    <span class="text-slate-500">Mã khách hàng:</span>
+                                    <span class="ml-2 font-medium text-slate-900">KH00123</span>
+                                </div>
                             </div>
-
 
                             <div class="flex items-center gap-3">
-
-                                <div
-                                    class="flex size-12 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-600"
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    class="size-4 shrink-0 text-slate-500"
                                 >
-                                    NB
-                                </div>
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M7.2 3.8 10 7.2 8.3 9.5a14.3 14.3 0 0 0 6.2 6.2L16.8 14l3.4 2.8c.5.4.7 1 .5 1.6-.5 1.5-1.9 2.5-3.5 2.3C10 19.8 4.2 14 3.3 6.8c-.2-1.6.8-3 2.3-3.5.6-.2 1.2 0 1.6.5Z"
+                                    />
+                                </svg>
+                                <span class="font-medium text-slate-900">0901 234 567</span>
+                            </div>
 
+                            <div class="flex items-center gap-3">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    class="size-4 shrink-0 text-slate-500"
+                                >
+                                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 7 7.5 6 7.5-6" />
+                                </svg>
+                                <span class="font-medium text-slate-900">anphat@company.vn</span>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    class="size-4 shrink-0 text-slate-500"
+                                >
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"
+                                    />
+                                    <circle cx="12" cy="10" r="2.5" />
+                                </svg>
                                 <div>
-
-                                    <p class="text-sm font-bold text-slate-900">
-                                        Nguyễn Văn B
-                                    </p>
-
-                                    <span
-                                        class="mt-1 inline-flex rounded-md bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-600"
-                                    >
-                                    Khách hàng thân thiết
-                                </span>
-
+                                    <span class="text-slate-500">Địa chỉ:</span>
+                                    <span class="ml-2 font-medium text-slate-900">
+                    Số 123 Đường Lê Lợi, P. Bến Thành, Q.1, TP. Hồ Chí Minh
+                  </span>
                                 </div>
-
                             </div>
-
-
-                            <div class="mt-4 space-y-3">
-
-                                <div class="flex items-center gap-3 text-xs text-slate-600">
-
-                                    <svg class="size-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.8 19.8 0 0 1 3.07 5.18 2 2 0 0 1 5.06 3h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L9 10.73a16 16 0 0 0 4.27 4.27l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z"/>
-                                    </svg>
-
-                                    0901 234 567
-
-                                </div>
-
-
-                                <div class="flex items-center gap-3 text-xs text-slate-600">
-
-                                    <svg class="size-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                        <rect x="3" y="5" width="18" height="14" rx="2"/>
-                                        <path d="m3 7 9 6 9-6"/>
-                                    </svg>
-
-                                    vanb@xyz.com
-
-                                </div>
-
-
-                                <div class="flex items-start gap-3 text-xs leading-5 text-slate-600">
-
-                                    <svg class="mt-0.5 size-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                        <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/>
-                                        <circle cx="12" cy="10" r="2.5"/>
-                                    </svg>
-
-                                    <span>
-                                    123 Lê Lợi, TP. Quy Nhơn, Bình Định
-                                </span>
-
-                                </div>
-
-
-                                <div class="flex items-center gap-3 text-xs text-slate-600">
-
-                                    <svg class="size-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                        <rect x="4" y="3" width="16" height="18" rx="2"/>
-                                        <path d="M8 7h8M8 11h8M8 15h5"/>
-                                    </svg>
-
-                                    Công ty XYZ
-
-                                </div>
-
-                            </div>
-
                         </div>
-
-
-                        <!-- =================================================
-                             SUMMARY
-                        ================================================== -->
-
-                        <div class="rounded-xl border border-slate-200 bg-white p-4">
-
-                            <div class="flex items-center gap-2">
-
-                                <span class="h-5 w-0.5 rounded-full bg-blue-600"></span>
-
-                                <h3 class="text-sm font-bold text-slate-900">
-                                    Tóm tắt xuất kho
-                                </h3>
-
-                            </div>
-
-
-                            <div class="mt-4 space-y-3">
-
-                                <div class="flex items-center justify-between">
-
-                                <span class="text-xs text-slate-500">
-                                    Số đơn hàng đã chọn
-                                </span>
-
-                                    <span class="text-xs font-bold text-slate-800">
-                                    1
-                                </span>
-
-                                </div>
-
-
-                                <div class="flex items-center justify-between">
-
-                                <span class="text-xs text-slate-500">
-                                    Số loại sản phẩm
-                                </span>
-
-                                    <span class="text-xs font-bold text-slate-800">
-                                    3
-                                </span>
-
-                                </div>
-
-
-                                <div class="flex items-center justify-between">
-
-                                <span class="text-xs text-slate-500">
-                                    Tổng số lượng xuất
-                                </span>
-
-                                    <span class="text-xs font-bold text-slate-800">
-                                    3.500
-                                </span>
-
-                                </div>
-
-
-                                <div class="flex items-center justify-between border-t border-slate-100 pt-3">
-
-                                <span class="text-xs text-slate-500">
-                                    Giá trị vốn (ước tính)
-                                </span>
-
-                                    <span class="text-xs font-bold text-slate-900">
-                                    27.850.000đ
-                                </span>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-                        <!-- =================================================
-                             STOCK AFTER
-                        ================================================== -->
-
-                        <div class="rounded-xl border border-slate-200 bg-white p-4">
-
-                            <div class="flex items-center justify-between">
-
-                                <div class="flex items-center gap-2">
-
-                                    <span class="h-5 w-0.5 rounded-full bg-blue-600"></span>
-
-                                    <h3 class="text-sm font-bold text-slate-900">
-                                        Tồn kho sau xuất
-                                        <span class="font-normal text-slate-400">
-                                        (dự kiến)
-                                    </span>
-                                    </h3>
-
-                                </div>
-
-
-                                <button
-                                    class="flex size-6 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100"
-                                >
-                                    <svg class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                        <circle cx="12" cy="12" r="9"/>
-                                        <path d="M12 11v5"/>
-                                        <path d="M12 8h.01"/>
-                                    </svg>
-                                </button>
-
-                            </div>
-
-
-                            <div class="mt-4 space-y-4">
-
-
-                                <!-- AVAILABLE -->
-
-                                <div class="flex items-center justify-between">
-
-                                    <div class="flex items-center gap-2.5">
-
-                                    <span class="flex size-7 items-center justify-center rounded-full bg-emerald-50">
-
-                                        <svg
-                                            class="size-4 text-emerald-600"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2.5"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path d="m5 12 4 4L19 6"/>
-                                        </svg>
-
-                                    </span>
-
-                                        <div>
-
-                                            <p class="text-xs font-medium text-slate-700">
-                                                Còn hàng
-                                            </p>
-
-                                            <p class="text-[10px] text-slate-400">
-                                                Đủ số lượng để xuất
-                                            </p>
-
-                                        </div>
-
-                                    </div>
-
-                                    <span class="text-sm font-bold text-slate-800">
-                                    3
-                                </span>
-
-                                </div>
-
-
-                                <!-- LOW -->
-
-                                <div class="flex items-center justify-between">
-
-                                    <div class="flex items-center gap-2.5">
-
-                                    <span class="flex size-7 items-center justify-center rounded-full bg-amber-50">
-
-                                        <svg
-                                            class="size-4 text-amber-500"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <circle cx="12" cy="12" r="8"/>
-                                            <path d="M12 8v4l2.5 1.5"/>
-                                        </svg>
-
-                                    </span>
-
-                                        <div>
-
-                                            <p class="text-xs font-medium text-slate-700">
-                                                Sắp hết
-                                            </p>
-
-                                            <p class="text-[10px] text-slate-400">
-                                                Tồn kho ≤ 10
-                                            </p>
-
-                                        </div>
-
-                                    </div>
-
-                                    <span class="text-sm font-bold text-slate-800">
-                                    0
-                                </span>
-
-                                </div>
-
-
-                                <!-- OUT -->
-
-                                <div class="flex items-center justify-between">
-
-                                    <div class="flex items-center gap-2.5">
-
-                                    <span class="flex size-7 items-center justify-center rounded-full bg-red-50">
-
-                                        <svg
-                                            class="size-4 text-red-500"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path d="m8 8 8 8M16 8l-8 8"/>
-                                        </svg>
-
-                                    </span>
-
-                                        <div>
-
-                                            <p class="text-xs font-medium text-slate-700">
-                                                Hết hàng
-                                            </p>
-
-                                            <p class="text-[10px] text-slate-400">
-                                                Không đủ số lượng
-                                            </p>
-
-                                        </div>
-
-                                    </div>
-
-                                    <span class="text-sm font-bold text-slate-800">
-                                    0
-                                </span>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </aside>
-
+                    </div>
                 </div>
+            </section>
 
+            <!-- Title -->
+            <div class="mt-5 mb-3 flex items-center gap-2">
+                <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    class="size-5 text-slate-500"
+                >
+                    <path stroke-linejoin="round" d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+                    <path stroke-linejoin="round" d="m4.5 7.7 7.5 4.2 7.5-4.2M12 12v9" />
+                    <path stroke-linejoin="round" d="M8.3 5.1 16 9.5" />
+                </svg>
+
+                <h3 class="text-base font-semibold text-slate-950">Thông tin xuất hàng</h3>
             </div>
 
+            <!-- Tabs -->
+            <div class="mb-2 border-b border-slate-200">
+                <div class="flex items-center gap-7">
+                    <button
+                        type="button"
+                        data-tab-button="inventory"
+                        class="tab-btn active-tab relative shrink-0 px-1 py-3 text-sm font-semibold text-blue-600"
+                    >
+                        Danh sách hàng còn tồn
+                    </button>
 
-            <!-- =====================================================
-                 FOOTER
-            ====================================================== -->
+                    <button
+                        type="button"
+                        data-tab-button="history"
+                        class="tab-btn relative shrink-0 px-1 py-3 text-sm font-medium text-slate-500 transition hover:text-slate-800"
+                    >
+                        Lịch sử xuất hàng
+                    </button>
+                </div>
+            </div>
 
-            <footer
-                class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-5 py-3.5"
-            >
+            <!-- Tab: Inventory -->
+            <div data-tab-panel="inventory" class="tab-panel hidden">
+                <div class="overflow-hidden rounded-xl border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[850px] border-collapse">
+                            <thead>
+                            <tr class="bg-slate-100/90 text-left">
+                                <th class="w-[90px] px-6 py-4 text-[16px] font-semibold text-slate-600">STT</th>
+                                <th class="w-[210px] px-6 py-4 text-[16px] font-semibold text-slate-600">Mã sản phẩm</th>
+                                <th class="px-6 py-4 text-[16px] font-semibold text-slate-600">Tên sản phẩm</th>
+                                <th class="w-[130px] px-6 py-4 text-[16px] font-semibold text-slate-600">ĐVT</th>
+                                <th class="w-[210px] px-6 py-4 text-right text-[16px] font-semibold text-slate-600">
+                                    Số lượng còn lại
+                                </th>
+                            </tr>
+                            </thead>
+
+                            <tbody class="divide-y divide-slate-200 bg-white">
+                            <tr class="transition hover:bg-slate-50">
+                                <td class="px-6 py-4 text-[17px] text-slate-900">1</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">SP001</td>
+                                <td class="px-6 py-4 text-[17px] font-medium text-slate-900">Hộp giấy kraft (in logo)</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">cái</td>
+                                <td class="px-6 py-4 text-right text-[17px] font-medium text-slate-900">200</td>
+                            </tr>
+
+                            <tr class="transition hover:bg-slate-50">
+                                <td class="px-6 py-4 text-[17px] text-slate-900">2</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">SP002</td>
+                                <td class="px-6 py-4 text-[17px] font-medium text-slate-900">Túi giấy kraft</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">cái</td>
+                                <td class="px-6 py-4 text-right text-[17px] font-medium text-slate-900">100</td>
+                            </tr>
+
+                            <tr class="transition hover:bg-slate-50">
+                                <td class="px-6 py-4 text-[17px] text-slate-900">3</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">SP003</td>
+                                <td class="px-6 py-4 text-[17px] font-medium text-slate-900">Tem dán logo</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">cái</td>
+                                <td class="px-6 py-4 text-right text-[17px] font-medium text-slate-900">400</td>
+                            </tr>
+
+                            <tr class="transition hover:bg-slate-50">
+                                <td class="px-6 py-4 text-[17px] text-slate-900">4</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">SP004</td>
+                                <td class="px-6 py-4 text-[17px] font-medium text-slate-900">Hộp carton 3 lớp</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">cái</td>
+                                <td class="px-6 py-4 text-right text-[17px] font-medium text-slate-900">50</td>
+                            </tr>
+
+                            <tr class="transition hover:bg-slate-50">
+                                <td class="px-6 py-4 text-[17px] text-slate-900">5</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">SP005</td>
+                                <td class="px-6 py-4 text-[17px] font-medium text-slate-900">Túi zipper</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">cái</td>
+                                <td class="px-6 py-4 text-right text-[17px] font-medium text-slate-900">150</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: History -->
+            <div data-tab-panel="history" class="tab-panel">
+                <div class="overflow-hidden rounded-xl border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[950px] border-collapse">
+                            <thead>
+                            <tr class="bg-slate-100/90 text-left">
+                                <th class="w-[90px] px-6 py-4 text-[16px] font-semibold text-slate-600">Đợt</th>
+                                <th class="w-[180px] px-6 py-4 text-[16px] font-semibold text-slate-600">Ngày xuất</th>
+                                <th class="w-[180px] px-6 py-4 text-[16px] font-semibold text-slate-600">Số lượng xuất</th>
+                                <th class="w-[200px] px-6 py-4 text-[16px] font-semibold text-slate-600">Người nhận</th>
+                                <th class="px-6 py-4 text-[16px] font-semibold text-slate-600">Ghi chú</th>
+                                <th class="w-[160px] px-6 py-4 text-[16px] font-semibold text-slate-600">Trạng thái</th>
+                            </tr>
+                            </thead>
+
+                            <tbody class="divide-y divide-slate-200 bg-white">
+                            <tr class="transition hover:bg-slate-50">
+                                <td class="px-6 py-4 text-[17px] font-medium text-slate-900">Đợt 1</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">12/06/2025</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">200</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">Nguyễn Văn A</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">Khách lấy đợt đầu</td>
+                                <td class="px-6 py-4">
+                    <span class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-600">
+                      Đã xuất
+                    </span>
+                                </td>
+                            </tr>
+
+                            <tr class="transition hover:bg-slate-50">
+                                <td class="px-6 py-4 text-[17px] font-medium text-slate-900">Đợt 2</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">25/06/2025</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">150</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">Trần Văn B</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">Xuất thêm theo tiến độ</td>
+                                <td class="px-6 py-4">
+                    <span class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[15px] font-semibold text-emerald-600">
+                      Đã xuất
+                    </span>
+                                </td>
+                            </tr>
+
+                            <tr class="transition hover:bg-slate-50">
+                                <td class="px-6 py-4 text-[17px] font-medium text-slate-900">Đợt 3</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">10/07/2025</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">100</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">Lê Thị C</td>
+                                <td class="px-6 py-4 text-[17px] text-slate-900">Xuất bổ sung</td>
+                                <td class="px-6 py-4">
+                    <span class="inline-flex rounded-full bg-amber-50 px-3 py-1 text-[15px] font-semibold text-amber-600">
+                      Chờ đối soát
+                    </span>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="shrink-0 border-t border-slate-200 bg-white px-6 py-3">
+            <div class="flex flex-wrap justify-end gap-3">
+                <button
+                    type="button"
+                    class="inline-flex h-10 min-w-24 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                    Đóng
+                </button>
 
                 <button
                     type="button"
-                    class="h-10 rounded-lg border border-slate-200 bg-white px-5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                    class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
                 >
-                    Hủy
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        class="size-4"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M3 6.75A1.75 1.75 0 0 1 4.75 5h9.5A1.75 1.75 0 0 1 16 6.75V17H3V6.75Z"
+                        />
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="M16 9h2.3c.6 0 1.16.3 1.48.82L21 12v5h-5V9Z"
+                        />
+                        <circle cx="7" cy="18" r="2" />
+                        <circle cx="18" cy="18" r="2" />
+                    </svg>
+                    Tạo đợt xuất hàng
                 </button>
-
-
-                <div class="flex items-center gap-2">
-
-                    <!-- PRINT -->
-
-                    <button
-                        type="button"
-                        class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                    >
-
-                        <svg
-                            class="size-4"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                            viewBox="0 0 24 24"
-                        >
-                            <path d="M6 9V3h12v6"/>
-                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                            <path d="M6 14h12v7H6z"/>
-                        </svg>
-
-                        In phiếu
-
-                    </button>
-
-
-                    <!-- EXPORT -->
-
-                    <button
-                        type="button"
-                        class="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-6 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 active:bg-blue-800"
-                    >
-
-                        <svg
-                            class="size-4"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.8"
-                            viewBox="0 0 24 24"
-                        >
-                            <path d="M12 3v12"/>
-                            <path d="m7 10 5 5 5-5"/>
-                            <path d="M5 21h14"/>
-                        </svg>
-
-                        Xuất kho
-
-                    </button>
-
-                </div>
-
-            </footer>
-
+            </div>
         </div>
+    </div>
+
+<!-- Script tab -->
+<script>
+    const tabButtons = document.querySelectorAll("[data-tab-button]");
+    const tabPanels = document.querySelectorAll("[data-tab-panel]");
+
+    tabButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+            const target = button.getAttribute("data-tab-button");
+
+            tabButtons.forEach((btn) => {
+                btn.classList.remove("text-blue-600", "active-tab");
+                btn.classList.add("text-slate-500");
+            });
+
+            tabPanels.forEach((panel) => {
+                panel.classList.add("hidden");
+            });
+
+            button.classList.remove("text-slate-500");
+            button.classList.add("text-blue-600", "active-tab");
+
+            document
+                .querySelector(`[data-tab-panel="${target}"]`)
+                .classList.remove("hidden");
+        });
+    });
+</script>
+
+<style>
+    .release-stock-modal table th {
+        padding: 0.75rem 1rem;
+        font-size: 0.75rem;
+        line-height: 1rem;
+    }
+
+    .release-stock-modal table td {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+    }
+
+    .release-stock-modal table td span {
+        font-size: 0.75rem;
+        line-height: 1rem;
+    }
+
+    .active-tab::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: -1px;
+        height: 2px;
+        width: 100%;
+        border-radius: 999px;
+        background: #2563eb;
+    }
+</style>

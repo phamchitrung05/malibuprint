@@ -32,7 +32,7 @@ class CustomerStocksTable
                     ->iconButton()
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('success')
-                    ->modalHeading('Xuất kho khách hàng')
+                    ->modalHeading('')
                     ->modalContent(fn (CustomerStock $record) => view('filament.resources.customer-stocks.actions.release-stock', [
                         'customerStock' => $record,
                     ]))
