@@ -38,6 +38,14 @@ return [
             'report' => false,
         ],
 
+        'attachment_staging' => [
+            // Disk private chỉ dùng làm vùng đệm; không tạo public URL cho file chưa lên Drive.
+            'driver' => 'local',
+            'root' => storage_path('app/private/attachment-staging'),
+            'throw' => true,
+            'report' => true,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
@@ -47,7 +55,7 @@ return [
             'report' => false,
         ],
 
-         's3' => [
+        's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
@@ -57,8 +65,8 @@ return [
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
-             'report' => false,
-         ],
+            'report' => false,
+        ],
 
         'google' => [
             'driver' => 'google',
@@ -70,7 +78,7 @@ return [
             'teamDriveId' => env('GOOGLE_DRIVE_TEAM_DRIVE_ID'),
         ],
 
-     ],
+    ],
 
     /*
     |--------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Orders\Schemas;
 
 use App\Models\Customer;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
 use Filament\Forms\Components\DateTimePicker;
@@ -19,8 +20,11 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
+use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 class OrderForm
@@ -109,15 +113,25 @@ class OrderForm
                                         ->columnSpanFull(),
                                 ]),
                             Section::make('Tệp đính kèm')
-                                ->description('Tải ảnh hoặc tài liệu lên Google Drive để kiểm tra kết nối')
+                                ->description(fn (string $operation): string => $operation === 'edit'
+                                    ? 'Chọn file bổ sung; file sẽ được liên kết sau khi lưu thay đổi'
+                                    : 'File được lưu tạm và tự động chuyển lên Google Drive sau khi lưu đơn')
                                 ->icon(Heroicon::OutlinedPaperClip)
                                 ->schema([
-                                    FileUpload::make('attachments')
+                                    FileUpload::make('new_attachments')
                                         ->label('File và hình ảnh')
-                                        ->disk('google')
-                                        ->directory(fn (): string => 'orders/'.now()->format('Y/m').'/pending')
+                                        // Form chỉ ghi vào staging local; queue job chịu trách nhiệm với Google Drive.
+                                        ->disk(config('attachments.staging_disk'))
+                                        ->directory(fn (): string => 'orders/'.now()->format('Y/m'))
+                                        ->storeFileNamesIn('new_attachment_names')
+                                        ->visibility('private')
                                         ->multiple()
-                                        ->reorderable()
+                                        ->live()
+                                        ->partiallyRenderComponentsAfterStateUpdated(['staged-attachment-list'])
+                                        // FilePond chỉ nhận file; danh sách card đồng nhất với Edit được render bên dưới.
+                                        ->previewable(false)
+                                        ->panelLayout('compact')
+                                        ->extraAttributes(['class' => 'order-attachment-uploader'])
                                         ->maxFiles(10)
                                         ->maxSize(51200)
                                         ->acceptedFileTypes([
@@ -127,8 +141,18 @@ class OrderForm
                                             'application/pdf',
                                             'application/zip',
                                         ])
-                                        ->helperText('File sẽ được lưu trực tiếp vào Google Drive, thư mục orders/{năm}/{tháng}/pending.')
-                                        ->dehydrated(false),
+                                        ->helperText(fn (string $operation): string => $operation === 'edit'
+                                            ? 'Các file đã chọn sẽ được liên kết khi bấm lưu thay đổi.'
+                                            : 'Các file đã chọn được hiển thị tại đây và tự liên kết sau khi tạo Order.'),
+                                    View::make('filament.resources.orders.forms.staged-attachments')
+                                        ->key('staged-attachment-list')
+                                        // Đọc raw Livewire state vì getState() của FileUpload chỉ trả file đã lưu chính thức.
+                                        ->viewData(fn ($livewire): array => [
+                                            'files' => self::stagedAttachmentData(
+                                                data_get($livewire, 'data.new_attachments'),
+                                                data_get($livewire, 'data.new_attachment_names'),
+                                            ),
+                                        ]),
                                 ]),
                         ]),
                     Grid::make(1)
@@ -175,6 +199,15 @@ class OrderForm
                                         ->rows(3)
                                         ->dehydrated(false)
                                         ->columnSpanFull(),
+                                ]),
+                            Section::make('Tệp đã liên kết')
+                                ->description('Danh sách file thuộc đơn hàng và trạng thái lưu trữ hiện tại')
+                                ->icon(Heroicon::OutlinedPaperClip)
+                                ->visible(fn (string $operation): bool => $operation === 'edit')
+                                ->schema([
+                                    View::make('filament.resources.orders.forms.manage-attachments')
+                                        // Order đã tồn tại nên danh sách được đọc từ Attachment thay vì uploader staging.
+                                        ->viewData(fn (?Order $record): array => ['order' => $record]),
                                 ]),
                         ]),
                     Section::make('Thêm sản phẩm')
@@ -366,6 +399,56 @@ class OrderForm
         $data['subtotal'] = round($data['quantity'] * $data['unit_price'], 2);
 
         return $data;
+    }
+
+    /**
+     * Chuẩn hóa state FileUpload thành dữ liệu chỉ dùng để hiển thị trước khi Order tồn tại.
+     *
+     * @return list<array{key: string, name: string, size: string}>
+     */
+    private static function stagedAttachmentData(mixed $state, mixed $storedNames): array
+    {
+        $files = is_array($state) ? $state : array_filter([$state]);
+        $names = is_array($storedNames) ? $storedNames : [];
+
+        return collect($files)
+            ->map(function (mixed $file, int|string $key) use ($names): ?array {
+                if ($file instanceof UploadedFile) {
+                    return [
+                        'key' => (string) $key,
+                        'name' => $file->getClientOriginalName(),
+                        'size' => self::formatBytes((int) $file->getSize()),
+                    ];
+                }
+
+                if (! is_string($file)) {
+                    return null;
+                }
+
+                $disk = Storage::disk(config('attachments.staging_disk'));
+
+                return [
+                    'key' => (string) $key,
+                    'name' => basename(str_replace('\\', '/', $names[$file] ?? $file)),
+                    'size' => self::formatBytes($disk->exists($file) ? $disk->size($file) : 0),
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private static function formatBytes(int $bytes): string
+    {
+        if ($bytes < 1024) {
+            return $bytes.' B';
+        }
+
+        if ($bytes < 1024 * 1024) {
+            return number_format($bytes / 1024, 1).' KB';
+        }
+
+        return number_format($bytes / 1024 / 1024, 1).' MB';
     }
 
     private static function customerDetails(mixed $customerId): HtmlString

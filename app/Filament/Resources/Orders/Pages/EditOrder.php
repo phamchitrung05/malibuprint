@@ -2,15 +2,23 @@
 
 namespace App\Filament\Resources\Orders\Pages;
 
+use App\Filament\Resources\Orders\Concerns\HandlesStagedAttachments;
 use App\Filament\Resources\Orders\OrderResource;
+use App\Services\AttachmentManager;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
-use Filament\Support\Enums\Width;
 
 class EditOrder extends EditRecord
 {
+    use HandlesStagedAttachments;
+
     protected static string $resource = OrderResource::class;
 
+    /** @var list<string> */
+    private array $stagedAttachmentPaths = [];
+
+    /** @var array<string, string> */
+    private array $stagedAttachmentNames = [];
 
     protected function authorizeAccess(): void
     {
@@ -21,6 +29,11 @@ class EditOrder extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        // File mới chỉ được liên kết sau khi Order và các thay đổi khác đã lưu thành công.
+        $this->stagedAttachmentPaths = array_values(array_filter($data['new_attachments'] ?? []));
+        $this->stagedAttachmentNames = $data['new_attachment_names'] ?? [];
+
+        // Các trường hỗ trợ tạo mới không thuộc schema bảng orders nên không được đưa vào câu UPDATE.
         unset(
             $data['customer_mode'],
             $data['customer_name'],
@@ -29,6 +42,8 @@ class EditOrder extends EditRecord
             $data['customer_company'],
             $data['customer_address'],
             $data['customer_note'],
+            $data['new_attachments'],
+            $data['new_attachment_names'],
         );
 
         return $data;
@@ -37,6 +52,15 @@ class EditOrder extends EditRecord
     protected function afterSave(): void
     {
         $this->record->recalculateTotals();
+
+        if ($this->stagedAttachmentPaths !== []) {
+            app(AttachmentManager::class)->attachStagedPaths(
+                $this->record,
+                $this->stagedAttachmentPaths,
+                $this->stagedAttachmentNames,
+                userId: auth()->id(),
+            );
+        }
     }
 
     protected function getHeaderActions(): array

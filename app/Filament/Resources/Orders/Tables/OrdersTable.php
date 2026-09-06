@@ -47,6 +47,17 @@ class OrdersTable
                         'cancelled' => 'danger',
                         default => 'gray',
                     }),
+                TextColumn::make('is_paid')
+                    ->label('Thanh toán')
+                    ->badge()
+                    // Cột tổng hợp dùng cờ trên Order để đồng nhất với tab thanh toán và bộ lọc.
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Đã thanh toán' : 'Chưa thanh toán')
+                    ->color(fn (bool $state): string => $state ? 'success' : 'warning'),
+                TextColumn::make('is_delivered')
+                    ->label('Giao hàng')
+                    ->badge()
+                    ->formatStateUsing(fn (bool $state): string => $state ? 'Đã giao' : 'Chưa giao')
+                    ->color(fn (bool $state): string => $state ? 'success' : 'warning'),
                 TextColumn::make('total_amount')->label('Tổng tiền')->money('VND'),
             ])
             ->filters([
@@ -111,7 +122,7 @@ class OrdersTable
                     ->modalWidth('7xl')
                     ->modalContent(fn (Order $record) => view('filament.resources.orders.actions.view-order', [
                         // Nạp dữ liệu của tất cả tab một lần để việc chuyển tab không phát sinh query mới.
-                        'order' => $record->loadMissing(['customer', 'items.productSku.product', 'payments', 'shipping', 'activities.causer']),
+                        'order' => $record->loadMissing(['customer', 'items.productSku.product', 'payments', 'shipping', 'activities.causer', 'attachments.managedFile']),
                     ])),
                 Action::make('updateStatus')
                     ->label('Cập nhật trạng thái')
@@ -126,6 +137,19 @@ class OrdersTable
                     ]))
                     ->modalWidth('2xl')
                     // Component Livewire có nút lưu riêng nên ẩn submit mặc định của Filament action.
+                    ->modalSubmitAction(false),
+                Action::make('manageAttachments')
+                    // Action độc lập với Edit để Order đã khóa vẫn có thể xem và bổ sung tài liệu.
+                    ->label('Quản lý tệp')
+                    ->tooltip('Quản lý tệp đính kèm')
+                    ->iconButton()
+                    ->icon(Heroicon::OutlinedPaperClip)
+                    ->color('info')
+                    ->modalHeading('Quản lý tệp đính kèm')
+                    ->modalContent(fn (Order $record) => view('filament.resources.orders.actions.manage-attachments', [
+                        'order' => $record,
+                    ]))
+                    ->modalWidth('4xl')
                     ->modalSubmitAction(false),
                 EditAction::make()
                     ->iconButton()

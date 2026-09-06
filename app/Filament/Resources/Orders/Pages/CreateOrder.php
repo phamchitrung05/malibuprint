@@ -2,26 +2,40 @@
 
 namespace App\Filament\Resources\Orders\Pages;
 
+use App\Filament\Resources\Orders\Concerns\HandlesStagedAttachments;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Models\Customer;
 use App\Models\Order;
+use App\Services\AttachmentManager;
 use App\Services\OrderCodeService;
 use Carbon\Carbon;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Filament\Support\Enums\Width;
 
 class CreateOrder extends CreateRecord
 {
+    use HandlesStagedAttachments;
+
     protected static string $resource = OrderResource::class;
+
+    /** @var list<string> */
+    private array $stagedAttachmentPaths = [];
+
+    /** @var array<string, string> */
+    private array $stagedAttachmentNames = [];
 
     /**
      * Tạo Order trong cùng transaction với sequence để mã luôn duy nhất khi có hai người thao tác.
      */
     protected function handleRecordCreation(array $data): Model
     {
+        // Tách file staging khỏi payload Order vì đây không phải cột của bảng orders.
+        $this->stagedAttachmentPaths = array_values(array_filter($data['new_attachments'] ?? []));
+        $this->stagedAttachmentNames = $data['new_attachment_names'] ?? [];
+        unset($data['new_attachments'], $data['new_attachment_names']);
+
         return DB::transaction(function () use ($data): Order {
             if (($data['customer_mode'] ?? null) === 'new') {
                 $customer = Customer::query()->create([
@@ -60,5 +74,15 @@ class CreateOrder extends CreateRecord
     {
         // Repeater lưu order_item sau Order, nên tổng tiền được chốt lại khi quan hệ đã lưu xong.
         $this->record->recalculateTotals();
+
+        if ($this->stagedAttachmentPaths !== []) {
+            // Filament đã lưu Order Item; lúc này mới tạo liên kết file và dispatch job sau commit.
+            app(AttachmentManager::class)->attachStagedPaths(
+                $this->record,
+                $this->stagedAttachmentPaths,
+                $this->stagedAttachmentNames,
+                userId: auth()->id(),
+            );
+        }
     }
 }

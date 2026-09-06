@@ -6,7 +6,7 @@ return [
     'client_secret' => env('GOOGLE_DRIVE_CLIENT_SECRET'),
     'refresh_token' => env('GOOGLE_DRIVE_REFRESH_TOKEN'),
 
-    // The Drive folder used as the root for MalibuPrint files.
+    // Package yaza nhận tên/đường dẫn thư mục, không nhận trực tiếp Folder ID.
     'folder' => env('GOOGLE_DRIVE_FOLDER'),
 
     // Optional values for a shared folder or Google Workspace Shared Drive.

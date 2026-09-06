@@ -19,7 +19,7 @@
         'shipping' => ['label' => 'Giao hàng'],
         'history' => ['label' => 'Lịch sử'],
         'note' => ['label' => 'Ghi chú'],
-        'attachments' => ['label' => 'Tệp đính kèm', 'count' => 2],
+        'attachments' => ['label' => 'Tệp đính kèm', 'count' => $order->attachments->count()],
     ];
 @endphp
 
@@ -54,10 +54,6 @@
             <button type="button" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
                 <x-heroicon-o-document-duplicate class="size-4"/>
                 Sao chép
-            </button>
-            <button type="button" class="inline-flex h-10 items-center gap-2 rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
-                <x-heroicon-o-arrow-path-rounded-square class="size-4"/>
-                Cập nhật trạng thái
             </button>
         </div>
     </header>
@@ -170,14 +166,4 @@
             </div>
         @endforeach
     </main>
-
-    <footer class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-6 py-3">
-        <button type="button" class="rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50">
-            Hủy đơn hàng
-        </button>
-        <button type="button" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
-            <x-heroicon-o-printer class="size-4"/>
-            In đơn hàng
-        </button>
-    </footer>
 </div>

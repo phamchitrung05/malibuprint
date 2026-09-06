@@ -10,6 +10,17 @@
     font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif;
 }
 
+/* FilePond chỉ giữ vùng chọn file; danh sách đã tải tạm được render bằng card Blade bên dưới. */
+.order-attachment-uploader {
+    & .filepond--list-scroller {
+        display: none;
+    }
+
+    & .filepond--root {
+        height: 3.5rem !important;
+    }
+}
+
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
 @source '../../../../resources/views/filament/resources/orders/actions/**/*.blade.php';

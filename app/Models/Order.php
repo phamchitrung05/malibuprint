@@ -43,6 +43,12 @@ class Order extends Model
         return $this->morphMany(Activity::class, 'subject')->latest();
     }
 
+    public function attachments(): MorphMany
+    {
+        // Order chỉ giữ các liên kết; metadata và trạng thái upload nằm trong ManagedFile.
+        return $this->morphMany(Attachment::class, 'attachable')->orderBy('sort_order');
+    }
+
     /**
      * Tính lại số tiền từ các dòng sản phẩm thay vì tin vào giá trị hidden từ trình duyệt.
      */
