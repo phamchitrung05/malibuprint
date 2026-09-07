@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\StatusApp;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,17 +10,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ManagedFile extends Model
 {
-    // Chu kỳ upload được lưu tường minh để Livewire có thể polling và hiển thị đúng trạng thái.
-    public const STATUS_PENDING = 'pending';
-
-    public const STATUS_UPLOADING = 'uploading';
-
-    public const STATUS_READY = 'ready';
-
-    public const STATUS_FAILED = 'failed';
-
-    public const STATUS_DELETED = 'deleted';
-
     protected $fillable = [
         'uuid',
         'disk',
@@ -63,6 +53,6 @@ class ManagedFile extends Model
     public function scopeReady(Builder $query): Builder
     {
         // Thư viện chỉ cho chọn lại những file đã được xác minh tồn tại trên storage đích.
-        return $query->where('status', self::STATUS_READY);
+        return $query->where('status', StatusApp::value('managed_file.status', 'ready'));
     }
 }

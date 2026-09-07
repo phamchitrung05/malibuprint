@@ -38,7 +38,7 @@
                 @forelse ($order->payments as $payment)
                     <tr>
                         <td class="px-5 py-4">{{ $payment->payment_date?->format('d/m/Y H:i') ?? '--/--' }}</td>
-                        <td class="px-3 py-4 font-medium text-emerald-600">{{ $payment->status === 'completed' ? 'Hoàn thành' : $payment->status }}</td>
+                        <td class="px-3 py-4 font-medium text-emerald-600">{{ \App\Support\StatusApp::label('payment.status', $payment->status) }}</td>
                         <td class="px-3 py-4 text-slate-500">{{ $payment->note ?: 'Không có ghi chú' }}</td>
                         <td class="px-5 py-4 text-right font-semibold">{{ number_format((float) $payment->amount, 0, ',', '.') }}đ</td>
                     </tr>

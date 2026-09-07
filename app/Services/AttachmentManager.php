@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\UploadManagedFileToGoogleDrive;
 use App\Models\Attachment;
 use App\Models\ManagedFile;
+use App\Support\StatusApp;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -59,7 +60,7 @@ class AttachmentManager
                     'extension' => $extension ?: null,
                     'size' => $stagingDisk->size($path),
                     'checksum' => $stagingDisk->checksum($path),
-                    'status' => ManagedFile::STATUS_PENDING,
+                    'status' => StatusApp::default('managed_file.status'),
                     'temporary_disk' => $stagingDiskName,
                     'temporary_path' => $path,
                     // URL có xác thực cho phép tải bản staging trong lúc worker chưa upload xong.
@@ -91,7 +92,7 @@ class AttachmentManager
     {
         $this->ensureAttachableIsAllowed($attachable);
 
-        if ($managedFile->status !== ManagedFile::STATUS_READY) {
+        if ($managedFile->status !== StatusApp::value('managed_file.status', 'ready')) {
             throw new InvalidArgumentException('Chỉ có thể liên kết file đã upload thành công.');
         }
 

@@ -1,5 +1,5 @@
 @php
-    $orderStatuses = config('order.statuses', []);
+    $orderStatuses = \App\Support\StatusApp::values('order.status');
     $productionStages = array_filter($orderStatuses, fn (array $status): bool => $status['show_in_progress'] ?? true);
     $currentStatusIndex = array_search($order->status, array_keys($productionStages), true);
     $currentStep = $currentStatusIndex === false ? 0 : $currentStatusIndex + 1;
@@ -11,7 +11,7 @@
     };
 @endphp
 
-<div class="space-y-4 text-left">
+<div class="space-y-4 text-left order-view-modal min-h-0 flex-1 max-h-[80vh] overflow-y-auto bg-slate-50/60 p-5">
     <section class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>

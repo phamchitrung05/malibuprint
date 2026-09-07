@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\ManagedFile;
+use App\Support\StatusApp;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -34,7 +35,7 @@ class UploadManagedFileToGoogleDrive implements ShouldBeUnique, ShouldQueue
     {
         $managedFile = ManagedFile::query()->findOrFail($this->managedFileId);
 
-        if ($managedFile->status === ManagedFile::STATUS_READY) {
+        if ($managedFile->status === StatusApp::value('managed_file.status', 'ready')) {
             // Job có thể được chạy lại an toàn mà không tạo bản sao trên Drive.
             return;
         }
@@ -47,7 +48,7 @@ class UploadManagedFileToGoogleDrive implements ShouldBeUnique, ShouldQueue
         }
 
         $managedFile->update([
-            'status' => ManagedFile::STATUS_UPLOADING,
+            'status' => StatusApp::value('managed_file.status', 'uploading'),
             'error_message' => null,
         ]);
 
@@ -85,7 +86,7 @@ class UploadManagedFileToGoogleDrive implements ShouldBeUnique, ShouldQueue
             'drive_file_id' => $driveFileId,
             'web_view_link' => $driveFileId ? "https://drive.google.com/file/d/{$driveFileId}/view" : $contentUrl,
             'web_content_link' => $contentUrl,
-            'status' => ManagedFile::STATUS_READY,
+            'status' => StatusApp::value('managed_file.status', 'ready'),
             'uploaded_at' => now(),
             'error_message' => null,
         ]);
@@ -103,7 +104,7 @@ class UploadManagedFileToGoogleDrive implements ShouldBeUnique, ShouldQueue
     {
         // File staging được giữ nguyên khi thất bại để admin có thể bấm thử lại.
         ManagedFile::query()->whereKey($this->managedFileId)->update([
-            'status' => ManagedFile::STATUS_FAILED,
+            'status' => StatusApp::value('managed_file.status', 'failed'),
             'error_message' => $exception?->getMessage(),
         ]);
     }

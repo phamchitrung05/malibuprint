@@ -16,6 +16,7 @@ class StockRelease extends Model
         'customer_stock_id',
         'released_at',
         'total_amount',
+        'allocated_shipping_fee',
         'note',
         'created_by',
     ];
@@ -25,6 +26,7 @@ class StockRelease extends Model
         return [
             'released_at' => 'datetime',
             'total_amount' => 'decimal:2',
+            'allocated_shipping_fee' => 'decimal:2',
         ];
     }
 

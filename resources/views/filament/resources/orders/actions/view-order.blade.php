@@ -1,5 +1,5 @@
 @php
-    $orderStatuses = config('order.statuses');
+    $orderStatuses = \App\Support\StatusApp::values('order.status');
     $currentStatus = $orderStatuses[$order->status] ?? [
         'label' => 'Đã hủy',
         'badge_classes' => 'bg-red-500 text-white',
@@ -25,7 +25,7 @@
 
 <div
     x-data="{ activeTab: 'info' }"
-    class="flex min-h-[520px] flex-col overflow-hidden text-slate-900"
+    class="order-view-modal flex h-full min-h-0 flex-col overflow-hidden text-slate-900"
 >
     {{-- Header và tiến trình là thông tin chung nên luôn hiển thị khi chuyển tab. --}}
     <header class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
@@ -159,7 +159,7 @@
         @endforeach
     </nav>
 
-    <main class="min-h-0 flex-1 overflow-y-auto bg-slate-50/60 p-5">
+    <main class="order-view-modal min-h-0 flex-1 max-h-[80vh] overflow-y-auto bg-slate-50/60 p-5">
         @foreach (array_keys($tabs) as $tabKey)
             <div x-show="activeTab === '{{ $tabKey }}'" x-cloak role="tabpanel">
                 @include('filament.resources.orders.actions.tabs.'.$tabKey)

@@ -7,6 +7,7 @@ use App\Models\CustomerStock;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\StockRelease;
+use App\Support\StatusApp;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -24,23 +25,26 @@ class PaymentManager
         return DB::transaction(function () use ($orderId, $note, $actorId): Payment {
             $order = Order::query()->lockForUpdate()->findOrFail($orderId);
 
-            if ($order->status !== 'completed' || $order->fulfillment_mode !== FulfillmentMode::Single) {
+            if ($order->status !== StatusApp::value('order.status', 'completed') || $order->fulfillment_mode !== FulfillmentMode::Single) {
                 throw ValidationException::withMessages([
                     'payment' => 'Chỉ được xác nhận tiền cho đơn giao một lần đã hoàn thành sản xuất.',
                 ]);
             }
 
-            if ($order->payments()->where('status', 'completed')->exists()) {
+            if ($order->payments()->where('status', StatusApp::value('payment.status', 'completed'))->exists()) {
                 throw ValidationException::withMessages([
                     'payment' => 'Đơn hàng này đã được xác nhận thanh toán.',
                 ]);
             }
 
-            $pendingPayment = $order->payments()->where('status', 'pending')->lockForUpdate()->first();
+            $pendingPayment = $order->payments()
+                ->where('status', StatusApp::value('payment.status', 'pending'))
+                ->lockForUpdate()
+                ->first();
             $paymentData = [
                 'payment_date' => now(),
                 'amount' => $order->total_amount,
-                'status' => 'completed',
+                'status' => StatusApp::value('payment.status', 'completed'),
                 'note' => filled($note) ? $note : null,
                 'confirmed_by' => $actorId,
             ];
@@ -81,13 +85,13 @@ class PaymentManager
                 ->lockForUpdate()
                 ->findOrFail($stockReleaseId);
 
-            if ($order->status !== 'completed' || $order->fulfillment_mode !== FulfillmentMode::CustomerStock) {
+            if ($order->status !== StatusApp::value('order.status', 'completed') || $order->fulfillment_mode !== FulfillmentMode::CustomerStock) {
                 throw ValidationException::withMessages([
                     'payment' => 'Phiếu xuất không thuộc đơn lưu kho đã hoàn thành sản xuất.',
                 ]);
             }
 
-            if (! $stockRelease->shipping()->where('status', 'delivered')->exists()) {
+            if (! $stockRelease->shipping()->where('status', StatusApp::value('shipping.status', 'delivered'))->exists()) {
                 throw ValidationException::withMessages([
                     'payment' => 'Phiếu xuất chưa có xác nhận giao hàng hợp lệ.',
                 ]);
@@ -103,7 +107,7 @@ class PaymentManager
                 'stock_release_id' => $stockRelease->id,
                 'payment_date' => now(),
                 'amount' => $stockRelease->total_amount,
-                'status' => 'completed',
+                'status' => StatusApp::value('payment.status', 'completed'),
                 'note' => filled($note) ? $note : null,
                 'confirmed_by' => $actorId,
             ]);
@@ -114,7 +118,9 @@ class PaymentManager
             $hasUnpaidRelease = $customerStock->releases()
                 ->whereDoesntHave('payment')
                 ->exists();
-            $confirmedAmount = (float) $order->payments()->where('status', 'completed')->sum('amount');
+            $confirmedAmount = (float) $order->payments()
+                ->where('status', StatusApp::value('payment.status', 'completed'))
+                ->sum('amount');
             $isClosed = ! $hasRemainingStock
                 && ! $hasUnpaidRelease
                 && $confirmedAmount >= (float) $order->total_amount;

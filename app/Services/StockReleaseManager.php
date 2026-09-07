@@ -8,6 +8,7 @@ use App\Models\CustomerStock;
 use App\Models\CustomerStockItem;
 use App\Models\Order;
 use App\Models\StockRelease;
+use App\Support\StatusApp;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -77,17 +78,25 @@ class StockReleaseManager
             }
 
             $isFinalRelease = $this->isFinalRelease($customerStock->id, $requestedQuantities);
-            $releaseTotal = $this->calculateReleaseTotal($order, array_sum($grossAmounts), $customerStock, $isFinalRelease);
+            [$productAmount, $allocatedShippingFee] = $this->calculateReleaseAmounts(
+                $order,
+                array_sum($grossAmounts),
+                $customerStock,
+                $isFinalRelease,
+            );
+            $releaseTotal = $productAmount + $allocatedShippingFee;
             $release = $customerStock->releases()->create([
                 'uuid' => (string) Str::uuid(),
                 'release_code' => $this->nextReleaseCode($order, $customerStock),
                 'released_at' => now(),
                 'total_amount' => $releaseTotal,
+                'allocated_shipping_fee' => $allocatedShippingFee,
                 'note' => filled($note) ? $note : null,
                 'created_by' => $actorId,
             ]);
 
-            $releaseTotalInCents = (int) round($releaseTotal * 100);
+            // Dòng sản phẩm không chứa phí giao hàng; phí được giữ riêng trên chứng từ để dễ đối soát.
+            $productAmountInCents = (int) round($productAmount * 100);
             $allocatedCents = 0;
             $lastItemId = $requestedQuantities->keys()->last();
             $grossReleaseTotal = array_sum($grossAmounts);
@@ -95,12 +104,12 @@ class StockReleaseManager
             foreach ($requestedQuantities as $itemId => $quantity) {
                 $stockItem = $stockItems->get($itemId);
                 // Tính bằng đơn vị nhỏ nhất và chặn theo số dư để không sinh dòng âm do làm tròn nhiều sản phẩm.
-                $remainingCents = max(0, $releaseTotalInCents - $allocatedCents);
+                $remainingCents = max(0, $productAmountInCents - $allocatedCents);
                 $lineCents = $itemId === $lastItemId
                     ? $remainingCents
                     : min(
                         $remainingCents,
-                        (int) round($releaseTotalInCents * ($grossAmounts[$itemId] / max($grossReleaseTotal, 1))),
+                        (int) round($productAmountInCents * ($grossAmounts[$itemId] / max($grossReleaseTotal, 1))),
                     );
                 $lineAmount = $lineCents / 100;
 
@@ -128,12 +137,13 @@ class StockReleaseManager
                 'release_code' => $release->release_code,
                 'total_quantity' => $requestedQuantities->sum(),
                 'total_amount' => $release->total_amount,
+                'allocated_shipping_fee' => $release->allocated_shipping_fee,
             ]);
 
             // Ghi nhận xuất kho trước; sau đó mới xác nhận Shipping để timeline đúng nghiệp vụ thực tế.
             $order->shipping()->create([
                 'stock_release_id' => $release->id,
-                'status' => 'delivered',
+                'status' => StatusApp::value('shipping.status', 'delivered'),
                 'shipped_at' => now(),
                 'delivered_at' => now(),
                 'confirmed_by' => $actorId,
@@ -145,7 +155,7 @@ class StockReleaseManager
 
     private function ensureOrderCanRelease(Order $order): void
     {
-        if ($order->status !== 'completed' || $order->fulfillment_mode !== FulfillmentMode::CustomerStock) {
+        if ($order->status !== StatusApp::value('order.status', 'completed') || $order->fulfillment_mode !== FulfillmentMode::CustomerStock) {
             throw ValidationException::withMessages([
                 'customerStock' => 'Chỉ được xuất kho cho đơn lưu kho đã hoàn thành sản xuất.',
             ]);
@@ -169,28 +179,38 @@ class StockReleaseManager
             });
     }
 
-    private function calculateReleaseTotal(
+    /** @return array{0: float, 1: float} */
+    private function calculateReleaseAmounts(
         Order $order,
         float $grossReleaseAmount,
         CustomerStock $customerStock,
         bool $isFinalRelease,
-    ): float {
-        $previousReleaseAmount = (float) $customerStock->releases()->sum('total_amount');
-        $remainingOrderAmount = max(0, (float) $order->total_amount - $previousReleaseAmount);
+    ): array {
+        $orderProductAmount = max(0, (float) $order->total_amount - (float) $order->shipping_fee);
+        $previousProductAmount = (float) $customerStock->releases()
+            // Quan hệ mặc định sắp xếp mới nhất; aggregate MySQL phải bỏ ORDER BY không cần thiết.
+            ->reorder()
+            ->selectRaw('COALESCE(SUM(total_amount - allocated_shipping_fee), 0) as total')
+            ->value('total');
+        $previousShippingFee = (float) $customerStock->releases()->sum('allocated_shipping_fee');
+        $remainingProductAmount = max(0, $orderProductAmount - $previousProductAmount);
+        $remainingShippingFee = max(0, (float) $order->shipping_fee - $previousShippingFee);
 
         if ($isFinalRelease) {
-            return round($remainingOrderAmount, 2);
+            return [round($remainingProductAmount, 2), round($remainingShippingFee, 2)];
         }
 
         if ((float) $order->subtotal <= 0) {
-            return 0.0;
+            return [0.0, 0.0];
         }
 
-        // Giảm giá toàn Order được phân bổ theo tỷ lệ giá trị sản phẩm của từng đợt xuất.
-        return round(min(
-            $remainingOrderAmount,
-            (float) $order->total_amount * ($grossReleaseAmount / (float) $order->subtotal),
-        ), 2);
+        // Cả giảm giá và phí giao hàng được phân bổ theo tỷ lệ giá trị gốc của đợt xuất.
+        $ratio = $grossReleaseAmount / (float) $order->subtotal;
+
+        return [
+            round(min($remainingProductAmount, $orderProductAmount * $ratio), 2),
+            round(min($remainingShippingFee, (float) $order->shipping_fee * $ratio), 2),
+        ];
     }
 
     private function nextReleaseCode(Order $order, CustomerStock $customerStock): string

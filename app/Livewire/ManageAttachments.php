@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Jobs\UploadManagedFileToGoogleDrive;
 use App\Models\Attachment;
 use App\Models\ManagedFile;
+use App\Support\StatusApp;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Model;
@@ -54,7 +55,7 @@ class ManageAttachments extends Component
         );
 
         $managedFile->update([
-            'status' => ManagedFile::STATUS_PENDING,
+            'status' => StatusApp::default('managed_file.status'),
             'error_message' => null,
         ]);
 
@@ -74,7 +75,10 @@ class ManageAttachments extends Component
             'attachments' => $attachments,
             'shouldPoll' => $attachments->contains(fn (Attachment $attachment): bool => in_array(
                 $attachment->managedFile->status,
-                [ManagedFile::STATUS_PENDING, ManagedFile::STATUS_UPLOADING],
+                [
+                    StatusApp::value('managed_file.status', 'pending'),
+                    StatusApp::value('managed_file.status', 'uploading'),
+                ],
                 true,
             )),
         ]);

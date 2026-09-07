@@ -8,6 +8,8 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Services\AttachmentManager;
 use App\Services\OrderCodeService;
+use App\Services\OrderInventoryManager;
+use App\Support\StatusApp;
 use Carbon\Carbon;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
@@ -61,7 +63,7 @@ class CreateOrder extends CreateRecord
             );
 
             $data['order_date'] = now();
-            $data['status'] = 'pending';
+            $data['status'] = StatusApp::default('order.status');
 
             $orderDate = Carbon::parse($data['order_date']);
             $data['order_code'] = app(OrderCodeService::class)->generate($orderDate);
@@ -74,6 +76,8 @@ class CreateOrder extends CreateRecord
     {
         // Repeater lưu order_item sau Order, nên tổng tiền được chốt lại khi quan hệ đã lưu xong.
         $this->record->recalculateTotals();
+        // Filament bao toàn bộ create lifecycle trong transaction nên thiếu tồn sẽ rollback cả Order và Order Item.
+        app(OrderInventoryManager::class)->syncForOrder($this->record->id, auth()->id());
 
         if ($this->stagedAttachmentPaths !== []) {
             // Filament đã lưu Order Item; lúc này mới tạo liên kết file và dispatch job sau commit.

@@ -21,7 +21,7 @@
         <div class="space-y-3">
             @forelse ($order->shipping as $shipping)
                 <div class="rounded-lg border border-slate-200 p-4 text-sm">
-                    <div class="flex justify-between gap-3"><span class="text-slate-500">Trạng thái</span><b>{{ match ($shipping->status) { 'delivered' => 'Đã giao', 'shipping' => 'Đang giao', default => 'Chờ giao' } }}</b></div>
+                    <div class="flex justify-between gap-3"><span class="text-slate-500">Trạng thái</span><b>{{ \App\Support\StatusApp::label('shipping.status', $shipping->status) }}</b></div>
                     <div class="mt-2 flex justify-between gap-3"><span class="text-slate-500">Ngày gửi</span><span>{{ $shipping->shipped_at?->format('d/m/Y H:i') ?? 'Chưa gửi' }}</span></div>
                     <div class="mt-2 flex justify-between gap-3"><span class="text-slate-500">Ngày giao</span><span>{{ $shipping->delivered_at?->format('d/m/Y H:i') ?? 'Chưa giao' }}</span></div>
                 </div>

@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Model;
 
 class ProductSku extends Model
 {
     protected $table = 'product_sku';
+
     // Bảng SKU chỉ có created_at nên phải tắt tự động ghi updated_at của Eloquent.
     public $timestamps = false;
+
     protected $fillable = ['product_id', 'sku_code', 'price', 'stock', 'status'];
 
     protected function casts(): array
@@ -27,6 +29,16 @@ class ProductSku extends Model
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class, 'product_sku_id');
+    }
+
+    public function inventoryAllocations(): HasMany
+    {
+        return $this->hasMany(OrderInventoryAllocation::class);
+    }
+
+    public function inventoryMovements(): HasMany
+    {
+        return $this->hasMany(InventoryMovement::class);
     }
 
     public function customerStocks(): HasMany

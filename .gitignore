@@ -22,3 +22,9 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+/.zcode
+
+# File import dữ liệu thật (PII khách hàng) - không đưa lên repo
+/database/customers.sql
+/database/products.sql
+/database/product_skus.sql

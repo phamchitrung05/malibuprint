@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Support\StatusApp;
+
 /** Tiến độ giao hàng độc lập với tiến độ sản xuất trong orders.status. */
 enum FulfillmentStatus: string
 {
@@ -12,11 +14,6 @@ enum FulfillmentStatus: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Pending => 'Chưa sẵn sàng giao',
-            self::Ready => 'Lưu kho, sẵn sàng giao',
-            self::PartiallyReleased => 'Đã xuất một phần',
-            self::FullyReleased => 'Đã xuất hết',
-        };
+        return StatusApp::label('order.fulfillment_status', $this->value);
     }
 }

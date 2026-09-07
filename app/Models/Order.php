@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\FulfillmentMode;
 use App\Enums\FulfillmentStatus;
+use App\Support\StatusApp;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,16 +25,12 @@ class Order extends Model
         'closed_at',
         'subtotal',
         'discount',
+        'shipping_fee',
         'total_amount',
         'note',
         'created_by',
         'is_delivered',
         'is_paid',
-    ];
-
-    protected $attributes = [
-        'fulfillment_mode' => 'single',
-        'fulfillment_status' => 'pending',
     ];
 
     protected function casts(): array
@@ -47,10 +44,21 @@ class Order extends Model
             'closed_at' => 'datetime',
             'subtotal' => 'decimal:2',
             'discount' => 'decimal:2',
+            'shipping_fee' => 'decimal:2',
             'total_amount' => 'decimal:2',
             'is_delivered' => 'boolean',
             'is_paid' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Order $order): void {
+            // Model dùng cùng default với Form và Service thay vì lặp chuỗi trạng thái rải rác.
+            $order->status ??= StatusApp::default('order.status');
+            $order->fulfillment_mode ??= StatusApp::default('order.fulfillment_mode');
+            $order->fulfillment_status ??= StatusApp::default('order.fulfillment_status');
+        });
     }
 
     public function customer(): BelongsTo
@@ -66,6 +74,16 @@ class Order extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function inventoryAllocations(): HasMany
+    {
+        return $this->hasMany(OrderInventoryAllocation::class);
+    }
+
+    public function inventoryMovements(): HasMany
+    {
+        return $this->hasMany(InventoryMovement::class);
     }
 
     public function shipping(): HasMany
@@ -98,11 +116,13 @@ class Order extends Model
             ->selectRaw('COALESCE(SUM(quantity * unit_price), 0) as total')
             ->value('total');
         $discount = min(max(0, (float) $this->discount), $subtotal);
+        $shippingFee = max(0, (float) $this->shipping_fee);
 
         $this->forceFill([
             'subtotal' => $subtotal,
             'discount' => $discount,
-            'total_amount' => max(0, $subtotal - $discount),
+            'shipping_fee' => $shippingFee,
+            'total_amount' => $subtotal - $discount + $shippingFee,
         ])->saveQuietly();
     }
 }

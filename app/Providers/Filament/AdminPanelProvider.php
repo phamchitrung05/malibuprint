@@ -9,7 +9,6 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -29,9 +28,11 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->viteTheme('resources/css/filament/admin/theme.css')
             ->login()
+            // CRUD Filament phải atomic để Order, Order Item và phân bổ tồn cùng commit hoặc cùng rollback.
+            ->databaseTransactions()
             ->colors([
                 'primary' => [
-                    50  => 'oklch(0.97 0.015 255)',
+                    50 => 'oklch(0.97 0.015 255)',
                     100 => 'oklch(0.94 0.03 255)',
                     200 => 'oklch(0.88 0.06 255)',
                     300 => 'oklch(0.80 0.10 255)',

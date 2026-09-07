@@ -6,6 +6,7 @@ use App\Enums\FulfillmentMode;
 use App\Enums\FulfillmentStatus;
 use App\Models\CustomerStock;
 use App\Models\Order;
+use App\Support\StatusApp;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -27,7 +28,7 @@ class CustomerStockManager
                 return null;
             }
 
-            if ($order->status !== 'completed') {
+            if ($order->status !== StatusApp::value('order.status', 'completed')) {
                 throw ValidationException::withMessages([
                     'order' => 'Chỉ được nhập kho khi đơn hàng đã hoàn thành sản xuất.',
                 ]);

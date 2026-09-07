@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
+use App\Support\StatusApp;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -182,7 +183,7 @@ class OrderForm
                                         ->options(collect(FulfillmentMode::cases())
                                             ->mapWithKeys(fn (FulfillmentMode $mode): array => [$mode->value => $mode->label()])
                                             ->all())
-                                        ->default(FulfillmentMode::Single->value)
+                                        ->default(StatusApp::default('order.fulfillment_mode'))
                                         ->required()
                                         // Hình thức giao được chốt lúc tạo để không đổi nguồn tồn khi Order đang sản xuất.
                                         ->disabled(fn (string $operation): bool => $operation === 'edit')
@@ -266,9 +267,12 @@ class OrderForm
                                         ->label('SKU')
                                         ->options(fn (Get $get): array => ProductSku::query()
                                             ->where('product_id', $get('product_id'))
-                                            ->where('status', 'active')
+                                            ->where('status', StatusApp::value('product_sku.status', 'active'))
                                             ->orderBy('sku_code')
-                                            ->pluck('sku_code', 'id')
+                                            ->get(['id', 'sku_code', 'stock'])
+                                            ->mapWithKeys(fn (ProductSku $sku): array => [
+                                                $sku->id => sprintf('%s (Khả dụng thêm: %s)', $sku->sku_code, number_format($sku->stock)),
+                                            ])
                                             ->all())
                                         ->searchable()
                                         ->preload()
@@ -358,11 +362,41 @@ class OrderForm
                                         'sm' => 6,
                                     ]),
                             ]),
+                            Grid::make([
+                                'default' => 1,
+                                'sm' => 12,
+                            ])->schema([
+                                Placeholder::make('shipping_fee_label')
+                                    ->hiddenLabel()
+                                    ->content('Phí giao hàng')
+                                    ->extraAttributes(['class' => 'flex h-full items-center text-sm text-gray-500 dark:text-gray-400'])
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'sm' => 6,
+                                    ]),
+                                TextInput::make('shipping_fee')
+                                    ->hiddenLabel()
+                                    ->numeric()
+                                    ->minValue(0)
+                                    ->default(0)
+                                    ->suffix('đ')
+                                    ->live(debounce: 300)
+                                    ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotals($get, $set))
+                                    ->columnSpan([
+                                        'default' => 'full',
+                                        'sm' => 6,
+                                    ]),
+                            ]),
                             Placeholder::make('static_total')
                                 ->hiddenLabel()
                                 ->content(fn (Get $get): HtmlString => new HtmlString(sprintf(
                                     '<div class="flex items-center justify-between gap-4 border-t border-gray-200 pt-4 dark:border-white/10"><span class="text-base font-bold text-gray-950 dark:text-white">Tổng cộng</span><span class="text-xl font-bold text-primary-600 dark:text-primary-400">%sđ</span></div>',
-                                    number_format(max(0, self::calculateSubtotal($get('items') ?? []) - (float) ($get('discount') ?? 0)), 0, ',', '.'),
+                                    number_format(max(
+                                        0,
+                                        self::calculateSubtotal($get('items') ?? [])
+                                            - (float) ($get('discount') ?? 0)
+                                            + (float) ($get('shipping_fee') ?? 0),
+                                    ), 0, ',', '.'),
                                 ))),
                         ]),
                 ]),
@@ -375,9 +409,7 @@ class OrderForm
         $subtotal = self::calculateSubtotal($items);
         $discount = max(0, (float) ($get('discount', isAbsolute: true) ?? 0));
         $shippingFee = max(0, (float) ($get('shipping_fee', isAbsolute: true) ?? 0));
-        $vatRate = max(0, (float) ($get('vat_rate', isAbsolute: true) ?? 0));
-        $taxableAmount = max(0, $subtotal - $discount);
-        $total = $taxableAmount + $shippingFee + ($taxableAmount * $vatRate / 100);
+        $total = max(0, $subtotal - $discount + $shippingFee);
 
         $set('subtotal', round($subtotal, 2), isAbsolute: true);
         $set('total_amount', round($total, 2), isAbsolute: true);
@@ -459,7 +491,7 @@ class OrderForm
             return new HtmlString('<p class="text-sm text-gray-500 dark:text-gray-400">Không tìm thấy thông tin khách hàng.</p>');
         }
 
-        $status = $customer->is_active ? 'Đang hoạt động' : 'Ngừng hoạt động';
+        $status = StatusApp::label('activation.customer', $customer->is_active);
         $statusClasses = $customer->is_active
             ? 'bg-success-50 text-success-700 ring-success-600/20 dark:bg-success-400/10 dark:text-success-400'
             : 'bg-gray-50 text-gray-600 ring-gray-500/10 dark:bg-gray-400/10 dark:text-gray-400';

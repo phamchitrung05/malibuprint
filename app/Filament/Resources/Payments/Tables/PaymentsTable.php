@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Payments\Tables;
 
+use App\Support\StatusApp;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -17,7 +18,11 @@ class PaymentsTable
                     ->placeholder('Thanh toán toàn Order'),
                 TextColumn::make('payment_date')->label('Ngày thanh toán')->dateTime('d/m/Y H:i')->sortable(),
                 TextColumn::make('amount')->label('Số tiền')->money('VND'),
-                TextColumn::make('status')->label('Trạng thái')->badge(),
+                TextColumn::make('status')
+                    ->label('Trạng thái')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => StatusApp::label('payment.status', $state))
+                    ->color(fn (string $state): string => StatusApp::color('payment.status', $state)),
             ])
             ->filters([
                 //

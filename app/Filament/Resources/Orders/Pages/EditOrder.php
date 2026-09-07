@@ -5,7 +5,8 @@ namespace App\Filament\Resources\Orders\Pages;
 use App\Filament\Resources\Orders\Concerns\HandlesStagedAttachments;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Services\AttachmentManager;
-use Filament\Actions\DeleteAction;
+use App\Services\OrderInventoryManager;
+use App\Support\StatusApp;
 use Filament\Resources\Pages\EditRecord;
 
 class EditOrder extends EditRecord
@@ -24,7 +25,10 @@ class EditOrder extends EditRecord
     {
         parent::authorizeAccess();
 
-        abort_if(in_array($this->record->status, ['completed', 'cancelled'], true), 403);
+        abort_if(in_array($this->record->status, [
+            StatusApp::value('order.status', 'completed'),
+            StatusApp::value('order.status', 'cancelled'),
+        ], true), 403);
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
@@ -52,6 +56,8 @@ class EditOrder extends EditRecord
     protected function afterSave(): void
     {
         $this->record->recalculateTotals();
+        // Đồng bộ theo phần chênh lệch sau khi Repeater đã lưu Order Item mới.
+        app(OrderInventoryManager::class)->syncForOrder($this->record->id, auth()->id());
 
         if ($this->stagedAttachmentPaths !== []) {
             app(AttachmentManager::class)->attachStagedPaths(
@@ -61,12 +67,5 @@ class EditOrder extends EditRecord
                 userId: auth()->id(),
             );
         }
-    }
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            DeleteAction::make(),
-        ];
     }
 }

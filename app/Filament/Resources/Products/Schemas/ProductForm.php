@@ -2,11 +2,9 @@
 
 namespace App\Filament\Resources\Products\Schemas;
 
-use Filament\Forms\Components\FileUpload;
+use App\Support\StatusApp;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
@@ -80,21 +78,31 @@ class ProductForm
                                                 ->suffix('đ')
                                                 ->required(),
                                             TextInput::make('stock')
-                                                ->label('Số lượng')
+                                                ->label('Tồn đầu kỳ')
+                                                ->helperText('SKU đã lưu phải điều chỉnh tồn từ màn hình Tồn kho SKU.')
                                                 ->numeric()
                                                 ->minValue(0)
                                                 ->default(0)
+                                                ->required()
+                                                ->disabledOn('edit')
+                                                ->dehydrated(fn (string $operation): bool => $operation === 'create'),
+                                            Select::make('status')
+                                                ->label('Trạng thái SKU')
+                                                ->options(StatusApp::options('product_sku.status'))
+                                                ->default(StatusApp::default('product_sku.status'))
                                                 ->required(),
                                         ])
                                         ->columns([
                                             'default' => 1,
-                                            'md' => 3,
+                                            'md' => 4,
                                         ])
                                         ->defaultItems(1)
                                         ->minItems(1)
                                         ->addActionLabel('Thêm SKU')
                                         ->itemLabel(fn (array $state): ?string => filled($state['sku_code'] ?? null) ? $state['sku_code'] : 'SKU mới')
                                         ->collapsible()
+                                        // SKU đã có movement phải được ngừng bán thay vì xóa để giữ lịch sử tồn kho.
+                                        ->deletable(fn (string $operation): bool => $operation === 'create')
                                         ->reorderable(false),
                                 ]),
                         ]),

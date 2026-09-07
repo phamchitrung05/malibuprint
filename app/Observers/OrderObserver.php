@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Order;
 use App\Services\OrderActivityLogger;
+use App\Support\StatusApp;
 
 class OrderObserver
 {
@@ -27,9 +28,9 @@ class OrderObserver
             ->all();
         $event = array_key_exists('status', $changes) ? 'order.status_changed' : 'order.updated';
         $description = match ($changes['status'] ?? null) {
-            'processing' => 'Đã bắt đầu xử lý đơn hàng',
-            'completed' => 'Đã hoàn thành sản xuất',
-            'cancelled' => 'Đã hủy đơn hàng',
+            StatusApp::value('order.status', 'processing') => 'Đã bắt đầu xử lý đơn hàng',
+            StatusApp::value('order.status', 'completed') => 'Đã hoàn thành sản xuất',
+            StatusApp::value('order.status', 'cancelled') => 'Đã hủy đơn hàng',
             default => 'Đã chỉnh sửa đơn hàng',
         };
 

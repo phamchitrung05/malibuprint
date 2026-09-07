@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Support\StatusApp;
+
 /** Hình thức giao thành phẩm được chốt khi tạo Order. */
 enum FulfillmentMode: string
 {
@@ -10,9 +12,6 @@ enum FulfillmentMode: string
 
     public function label(): string
     {
-        return match ($this) {
-            self::Single => 'Giao hàng một lần',
-            self::CustomerStock => 'Lưu kho và xuất nhiều đợt',
-        };
+        return StatusApp::label('order.fulfillment_mode', $this->value);
     }
 }

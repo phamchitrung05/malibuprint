@@ -48,7 +48,7 @@ class CustomerStockWorkflowTest extends TestCase
 
     public function test_partial_release_creates_shipping_and_keeps_payment_unconfirmed(): void
     {
-        [$user, $order, $stock] = $this->completedCustomerStockOrder(100);
+        [$user, $order, $stock] = $this->completedCustomerStockOrder(100, 50000);
         $stockItem = $stock->items()->sole();
 
         Livewire::actingAs($user)
@@ -60,7 +60,9 @@ class CustomerStockWorkflowTest extends TestCase
         $release = $stock->releases()->firstOrFail();
 
         $this->assertSame(10, $stockItem->refresh()->released_quantity);
-        $this->assertSame('100000.00', $release->total_amount);
+        $this->assertSame('5000.00', $release->allocated_shipping_fee);
+        $this->assertSame('105000.00', $release->total_amount);
+        $this->assertSame('100000.00', $release->items()->sole()->amount);
         $this->assertNull($release->payment);
         $this->assertSame('delivered', $release->shipping->status);
         $this->assertFalse($order->refresh()->is_delivered);
@@ -85,7 +87,7 @@ class CustomerStockWorkflowTest extends TestCase
         Livewire::actingAs($user)
             ->test(UpdateOrderStatus::class, ['orderId' => $order->id])
             ->call('confirmShipping')
-            ->assertStatus(422);
+            ->assertHasErrors('shipping');
 
         $this->assertDatabaseCount('payment', 0);
         $this->assertDatabaseCount('shipping', 0);
@@ -144,7 +146,7 @@ class CustomerStockWorkflowTest extends TestCase
 
     public function test_order_closes_only_after_all_stock_is_released_and_every_release_is_paid(): void
     {
-        [$user, $order, $stock] = $this->completedCustomerStockOrder(25);
+        [$user, $order, $stock] = $this->completedCustomerStockOrder(25, 10001);
         $stockItem = $stock->items()->sole();
 
         Livewire::actingAs($user)
@@ -162,6 +164,11 @@ class CustomerStockWorkflowTest extends TestCase
             ->set("quantities.{$stockItem->id}", 15)
             ->call('release');
         $secondRelease = $stock->releases()->latest('id')->firstOrFail();
+
+        $this->assertSame('4000.40', $firstRelease->allocated_shipping_fee);
+        $this->assertSame('6000.60', $secondRelease->allocated_shipping_fee);
+        $this->assertSame('104000.40', $firstRelease->total_amount);
+        $this->assertSame('156000.60', $secondRelease->total_amount);
 
         $this->assertTrue($order->refresh()->is_delivered);
         $this->assertFalse($order->is_paid);
@@ -182,10 +189,11 @@ class CustomerStockWorkflowTest extends TestCase
         $this->assertSame(1, $order->activities()->where('event', 'order.closed')->count());
         $this->assertDatabaseCount('payment', 2);
         $this->assertDatabaseCount('shipping', 2);
+        $this->assertSame(260001.0, (float) $order->payments()->sum('amount'));
     }
 
     /** @return array{User, Order} */
-    private function createCustomerStockOrder(int $quantity): array
+    private function createCustomerStockOrder(int $quantity, float $shippingFee = 0): array
     {
         $user = User::factory()->create();
         $customer = Customer::query()->create([
@@ -211,7 +219,8 @@ class CustomerStockWorkflowTest extends TestCase
             'fulfillment_mode' => FulfillmentMode::CustomerStock,
             'subtotal' => $quantity * 10000,
             'discount' => 0,
-            'total_amount' => $quantity * 10000,
+            'shipping_fee' => $shippingFee,
+            'total_amount' => ($quantity * 10000) + $shippingFee,
             'created_by' => $user->id,
         ]);
 
@@ -226,9 +235,9 @@ class CustomerStockWorkflowTest extends TestCase
     }
 
     /** @return array{User, Order, CustomerStock} */
-    private function completedCustomerStockOrder(int $quantity): array
+    private function completedCustomerStockOrder(int $quantity, float $shippingFee = 0): array
     {
-        [$user, $order] = $this->createCustomerStockOrder($quantity);
+        [$user, $order] = $this->createCustomerStockOrder($quantity, $shippingFee);
 
         Livewire::actingAs($user)
             ->test(UpdateOrderStatus::class, ['orderId' => $order->id])

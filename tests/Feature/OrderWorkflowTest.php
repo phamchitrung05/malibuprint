@@ -20,6 +20,10 @@ class OrderWorkflowTest extends TestCase
     {
         $user = User::factory()->create();
         $order = $this->createOrder($user);
+        $order->forceFill([
+            'shipping_fee' => 50000,
+            'total_amount' => 1050000,
+        ])->saveQuietly();
 
         $this->actingAs($user);
 
@@ -36,6 +40,7 @@ class OrderWorkflowTest extends TestCase
         $this->assertTrue($order->is_paid);
         $this->assertTrue($order->is_delivered);
         $this->assertCount(1, $order->payments);
+        $this->assertSame('1050000.00', $order->payments->sole()->amount);
         $this->assertCount(1, $order->shipping);
         $this->assertDatabaseCount('customer_stock', 0);
         $this->assertDatabaseHas('activity_log', [
@@ -83,7 +88,7 @@ class OrderWorkflowTest extends TestCase
 
         Livewire::test(UpdateOrderStatus::class, ['orderId' => $order->id])
             ->call('confirmShipping')
-            ->assertStatus(422);
+            ->assertHasErrors('shipping');
 
         $this->assertDatabaseCount('payment', 0);
         $this->assertDatabaseCount('shipping', 0);
@@ -141,7 +146,7 @@ class OrderWorkflowTest extends TestCase
         $this->assertSame(1, $order->activities()->where('event', 'order.closed')->count());
     }
 
-    public function test_order_totals_are_recalculated_from_its_items_and_discount(): void
+    public function test_order_totals_are_recalculated_from_items_discount_and_shipping_fee(): void
     {
         $user = User::factory()->create();
         $order = $this->createOrder($user);
@@ -164,13 +169,15 @@ class OrderWorkflowTest extends TestCase
             'subtotal' => 300000,
         ]);
         $order->discount = 50000;
+        $order->shipping_fee = 30000;
         $order->recalculateTotals();
 
         $order->refresh();
 
         $this->assertSame('300000.00', $order->subtotal);
         $this->assertSame('50000.00', $order->discount);
-        $this->assertSame('250000.00', $order->total_amount);
+        $this->assertSame('30000.00', $order->shipping_fee);
+        $this->assertSame('280000.00', $order->total_amount);
     }
 
     private function createOrder(User $user): Order

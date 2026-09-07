@@ -18,7 +18,7 @@
                 <p class="font-semibold text-slate-900">{{ $order->customer?->name ?? 'Chưa có khách hàng' }}</p>
                 <span
                     class="mt-1 inline-flex rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
-                    {{ $order->customer?->is_active ? 'Đang hoạt động' : 'Chưa xác định' }}
+                    {{ \App\Support\StatusApp::label('activation.customer', (bool) $order->customer?->is_active) }}
                 </span>
             </div>
         </div>
@@ -56,7 +56,7 @@
             </div>
             <div class="flex items-center justify-between gap-4">
                 <dt class="text-slate-500">Trạng thái</dt>
-                <dd class="font-medium text-slate-800">{{ config("order.statuses.{$order->status}.label", 'Không xác định') }}</dd>
+                <dd class="font-medium text-slate-800">{{ \App\Support\StatusApp::label('order.status', $order->status) }}</dd>
             </div>
             <div class="flex items-center justify-between gap-4">
                 <dt class="text-slate-500">Giao hàng</dt>
@@ -92,7 +92,7 @@
             </div>
             <div class="flex items-center justify-between">
                 <dt class="text-slate-500">Phí vận chuyển</dt>
-                <dd class="font-medium text-slate-800">0đ</dd>
+                <dd class="font-medium text-slate-800">{{ number_format((float) $order->shipping_fee, 0, ',', '.') }}đ</dd>
             </div>
         </dl>
 

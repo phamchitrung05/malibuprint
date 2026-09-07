@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\ProductSku;
 use App\Models\User;
 use App\Services\AttachmentManager;
+use App\Support\StatusApp;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
@@ -55,7 +56,7 @@ class AttachmentManagementTest extends TestCase
         $this->assertDatabaseHas('managed_files', [
             'original_name' => 'Thiết kế.pdf',
             'temporary_path' => $path,
-            'status' => ManagedFile::STATUS_PENDING,
+            'status' => StatusApp::value('managed_file.status', 'pending'),
         ]);
         $this->assertDatabaseHas('attachments', [
             'managed_file_id' => $files[0]->id,
@@ -95,7 +96,7 @@ class AttachmentManagementTest extends TestCase
             'mime_type' => 'application/pdf',
             'extension' => 'pdf',
             'size' => 11,
-            'status' => ManagedFile::STATUS_PENDING,
+            'status' => StatusApp::value('managed_file.status', 'pending'),
             'temporary_disk' => 'attachment_staging',
             'temporary_path' => $path,
             'web_view_link' => $stagingLink,
@@ -107,7 +108,7 @@ class AttachmentManagementTest extends TestCase
 
         Storage::disk('google')->assertExists('2026/09/managed-file.pdf');
         Storage::disk('attachment_staging')->assertMissing($path);
-        $this->assertSame(ManagedFile::STATUS_READY, $managedFile->status);
+        $this->assertSame(StatusApp::value('managed_file.status', 'ready'), $managedFile->status);
         $this->assertNull($managedFile->temporary_path);
         $this->assertNotNull($managedFile->uploaded_at);
         $this->assertNotSame($stagingLink, $managedFile->web_view_link);
@@ -126,7 +127,7 @@ class AttachmentManagementTest extends TestCase
             'storage_name' => 'shared.pdf',
             'path' => '2026/09/shared.pdf',
             'size' => 100,
-            'status' => ManagedFile::STATUS_READY,
+            'status' => StatusApp::value('managed_file.status', 'ready'),
             'uploaded_at' => now(),
         ]);
 
@@ -151,7 +152,7 @@ class AttachmentManagementTest extends TestCase
             'storage_name' => 'linked.pdf',
             'path' => '2026/09/linked.pdf',
             'size' => 100,
-            'status' => ManagedFile::STATUS_READY,
+            'status' => StatusApp::value('managed_file.status', 'ready'),
         ]);
         ManagedFile::create([
             'uuid' => (string) Str::uuid(),
@@ -160,7 +161,7 @@ class AttachmentManagementTest extends TestCase
             'storage_name' => 'unlinked.pdf',
             'path' => '2026/09/unlinked.pdf',
             'size' => 100,
-            'status' => ManagedFile::STATUS_READY,
+            'status' => StatusApp::value('managed_file.status', 'ready'),
         ]);
         app(AttachmentManager::class)->attachExisting($order, $linkedFile, userId: $user->id);
 
@@ -187,7 +188,7 @@ class AttachmentManagementTest extends TestCase
             'storage_name' => 'existing.pdf',
             'path' => '2026/09/existing.pdf',
             'size' => 100,
-            'status' => ManagedFile::STATUS_READY,
+            'status' => StatusApp::value('managed_file.status', 'ready'),
             'uploaded_at' => now(),
         ]);
         app(AttachmentManager::class)->attachExisting($order, $managedFile, userId: $user->id);
@@ -230,7 +231,7 @@ class AttachmentManagementTest extends TestCase
 
         $this->assertDatabaseHas('managed_files', [
             'original_name' => 'file-bo-sung.pdf',
-            'status' => ManagedFile::STATUS_PENDING,
+            'status' => StatusApp::value('managed_file.status', 'pending'),
         ]);
         $this->assertDatabaseHas('attachments', [
             'attachable_type' => Order::class,
@@ -274,7 +275,7 @@ class AttachmentManagementTest extends TestCase
             'storage_name' => 'leftover.pdf',
             'path' => '2026/09/leftover.pdf',
             'size' => 7,
-            'status' => ManagedFile::STATUS_READY,
+            'status' => StatusApp::value('managed_file.status', 'ready'),
             'temporary_disk' => 'attachment_staging',
             'temporary_path' => $path,
             'uploaded_at' => now(),

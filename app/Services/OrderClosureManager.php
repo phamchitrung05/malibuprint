@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Support\StatusApp;
 
 class OrderClosureManager
 {
@@ -17,7 +18,7 @@ class OrderClosureManager
     public function closeIfReady(Order $order): bool
     {
         if ($order->closed_at !== null
-            || $order->status !== 'completed'
+            || $order->status !== StatusApp::value('order.status', 'completed')
             || ! $order->is_delivered
             || ! $order->is_paid) {
             return false;

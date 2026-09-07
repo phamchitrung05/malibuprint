@@ -33,6 +33,8 @@ class CustomerStocksTable
                         'customerStock' => $record,
                     ]))
                     ->modalWidth('7xl')
+                     // Dùng chung chiều cao modal để nội dung dài không làm trang nền xuất hiện scrollbar.
+                    ->extraModalWindowAttributes(['class' => 'order-view-modal-window lg'])
                     ->modalSubmitAction(false)
                     ->modalCancelAction(false),
             ]);

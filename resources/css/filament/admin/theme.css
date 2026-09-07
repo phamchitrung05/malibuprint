@@ -10,6 +10,48 @@
     font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Modal chi tiết có chiều cao ổn định; riêng timeline được cuộn nhưng không hiện thanh scrollbar. */
+.order-view-modal,
+.order-history-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.order-view-modal::-webkit-scrollbar,
+.order-history-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+/* Modal không vượt viewport; chỉ vùng nội dung tab được phép cuộn bên trong cửa sổ. */
+.order-view-modal-window {
+    --modal-max-h: 750px;   /* chiều cao tối đa "list thường" */
+    --modal-gap: 2rem;      /* khoảng chừa trên/dưới */
+
+    height: min(var(--modal-max-h), calc(100dvh - var(--modal-gap)));
+    max-height: calc(100dvh - var(--modal-gap));
+    overflow: hidden;
+}
+
+.order-view-modal-window.lg{
+    --modal-max-h: 850px;
+}
+
+.order-view-modal-window.sm{
+    --modal-max-h: 650px;
+}
+
+@media (max-width: 640px) {
+    .order-view-modal-window {
+        height: calc(100dvh - 1rem);
+        max-height: calc(100dvh - 1rem);
+    }
+}
+
+.order-view-modal-window .fi-modal-content {
+    min-height: 0;
+    overflow: hidden;
+}
+
 /* FilePond chỉ giữ vùng chọn file; danh sách đã tải tạm được render bằng card Blade bên dưới. */
 .order-attachment-uploader {
     & .filepond--list-scroller {

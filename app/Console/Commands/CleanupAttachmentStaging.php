@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\ManagedFile;
+use App\Support\StatusApp;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,9 +23,9 @@ class CleanupAttachmentStaging extends Command
         ManagedFile::query()
             ->whereNotNull('temporary_path')
             ->where(function ($query): void {
-                $query->where('status', ManagedFile::STATUS_READY)
+                $query->where('status', StatusApp::value('managed_file.status', 'ready'))
                     ->orWhere(function ($query): void {
-                        $query->where('status', ManagedFile::STATUS_FAILED)
+                        $query->where('status', StatusApp::value('managed_file.status', 'failed'))
                             ->where('updated_at', '<=', now()->subDays(config('attachments.failed_retention_days')));
                     });
             })

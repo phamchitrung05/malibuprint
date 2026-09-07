@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Orders\Tables;
 use App\Enums\FulfillmentMode;
 use App\Filament\Resources\CustomerStocks\CustomerStockResource;
 use App\Models\Order;
+use App\Support\StatusApp;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -31,43 +32,25 @@ class OrdersTable
                 TextColumn::make('status')
                     ->label('Trạng thái')
                     ->badge()
-                    // Database giữ mã tiếng Anh, bảng chỉ chuyển đổi ở tầng hiển thị.
-                    ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'Mới tạo',
-                        'processing' => 'Đang xử lý',
-                        'completed' => 'Hoàn thành',
-                        'cancelled' => 'Đã hủy',
-                        default => 'Không xác định',
-                    })
-                    ->color(fn (Order $record): string => match ($record->status) {
-                        'pending' => 'warning',
-                        'processing' => 'info',
-                        'completed' => 'success',
-                        'cancelled' => 'danger',
-                        default => 'gray',
-                    }),
+                    ->formatStateUsing(fn (string $state): string => StatusApp::label('order.status', $state))
+                    ->color(fn (string $state): string => StatusApp::color('order.status', $state)),
                 TextColumn::make('is_paid')
                     ->label('Thanh toán')
                     ->badge()
                     // Cột tổng hợp dùng cờ trên Order để đồng nhất với tab thanh toán và bộ lọc.
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'Đã thanh toán' : 'Chưa thanh toán')
-                    ->color(fn (bool $state): string => $state ? 'success' : 'warning'),
+                    ->formatStateUsing(fn (bool $state): string => StatusApp::label('order.payment_summary', $state))
+                    ->color(fn (bool $state): string => StatusApp::color('order.payment_summary', $state)),
                 TextColumn::make('is_delivered')
                     ->label('Giao hàng')
                     ->badge()
-                    ->formatStateUsing(fn (bool $state): string => $state ? 'Đã giao' : 'Chưa giao')
-                    ->color(fn (bool $state): string => $state ? 'success' : 'warning'),
+                    ->formatStateUsing(fn (bool $state): string => StatusApp::label('order.delivery_summary', $state))
+                    ->color(fn (bool $state): string => StatusApp::color('order.delivery_summary', $state)),
                 TextColumn::make('total_amount')->label('Tổng tiền')->money('VND'),
             ])
             ->filters([
                 SelectFilter::make('status')
                     ->label('Trạng thái')
-                    ->options([
-                        'pending' => 'Mới tạo',
-                        'processing' => 'Đang xử lý',
-                        'completed' => 'Hoàn thành',
-                        'cancelled' => 'Đã hủy',
-                    ]),
+                    ->options(StatusApp::options('order.status')),
                 SelectFilter::make('customer')
                     ->label('Khách hàng')
                     ->relationship('customer', 'name')
@@ -75,12 +58,12 @@ class OrdersTable
                     ->preload(),
                 TernaryFilter::make('is_delivered')
                     ->label('Giao hàng')
-                    ->trueLabel('Đã giao')
-                    ->falseLabel('Chưa giao'),
+                    ->trueLabel(StatusApp::label('order.delivery_summary', true))
+                    ->falseLabel(StatusApp::label('order.delivery_summary', false)),
                 TernaryFilter::make('is_paid')
                     ->label('Thanh toán')
-                    ->trueLabel('Đã thanh toán')
-                    ->falseLabel('Chưa thanh toán'),
+                    ->trueLabel(StatusApp::label('order.payment_summary', true))
+                    ->falseLabel(StatusApp::label('order.payment_summary', false)),
                 Filter::make('delivery_date')
                     ->label('Ngày dự kiến giao')
                     ->form([
@@ -119,6 +102,8 @@ class OrdersTable
                     ->schema([])
                     ->modalHeading('')
                     ->modalWidth('7xl')
+                    // Khóa chiều cao cửa sổ modal để nội dung tự cuộn bên trong, không làm trang nền cuộn.
+                    ->extraModalWindowAttributes(['class' => 'order-view-modal-window lg'])
                     ->modalContent(fn (Order $record) => view('filament.resources.orders.actions.view-order', [
                         // Nạp dữ liệu của tất cả tab một lần để việc chuyển tab không phát sinh query mới.
                         'order' => $record->loadMissing(['customer', 'items.productSku.product', 'payments', 'shipping', 'activities.causer', 'attachments.managedFile']),
@@ -135,7 +120,8 @@ class OrdersTable
                         'order' => $record,
                     ]))
                     ->modalWidth('2xl')
-                    // Component Livewire có nút lưu riêng nên ẩn submit mặc định của Filament action.
+                    ->extraModalWindowAttributes(['class' => 'order-view-modal-window sm'])
+                     // Component Livewire có nút lưu riêng nên ẩn submit mặc định của Filament action.
                     ->modalSubmitAction(false),
                 Action::make('customerStock')
                     ->label('Xem Customer Stock')
@@ -144,14 +130,17 @@ class OrdersTable
                     ->icon(Heroicon::OutlinedArchiveBox)
                     ->color('info')
                     ->visible(fn (Order $record): bool => $record->fulfillment_mode === FulfillmentMode::CustomerStock
-                        && $record->status === 'completed')
+                        && $record->status === StatusApp::value('order.status', 'completed'))
                     ->url(fn (Order $record): string => CustomerStockResource::getUrl('index', [
                         'order_id' => $record->id,
                     ])),
                 EditAction::make()
                     ->iconButton()
                     ->icon(Heroicon::OutlinedPencilSquare)
-                    ->visible(fn (Order $record): bool => ! in_array($record->status, ['completed', 'cancelled'], true)),
+                    ->visible(fn (Order $record): bool => ! in_array($record->status, [
+                        StatusApp::value('order.status', 'completed'),
+                        StatusApp::value('order.status', 'cancelled'),
+                    ], true)),
             ]);
     }
 }
