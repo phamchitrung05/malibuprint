@@ -35,4 +35,9 @@ class Payment extends Model
     {
         return $this->belongsTo(StockRelease::class);
     }
+
+    public function confirmer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'confirmed_by');
+    }
 }

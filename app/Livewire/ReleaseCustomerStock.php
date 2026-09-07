@@ -17,8 +17,6 @@ class ReleaseCustomerStock extends Component
     /** @var array<int, int|string|null> */
     public array $quantities = [];
 
-    public ?string $note = null;
-
     public function mount(int $customerStockId): void
     {
         $this->customerStockId = $customerStockId;
@@ -30,7 +28,6 @@ class ReleaseCustomerStock extends Component
         $this->validate([
             'quantities' => ['required', 'array'],
             'quantities.*' => ['nullable', 'integer', 'min:0'],
-            'note' => ['nullable', 'string', 'max:1000'],
         ]);
 
         abort_unless(auth()->check(), 403);
@@ -38,11 +35,10 @@ class ReleaseCustomerStock extends Component
         app(StockReleaseManager::class)->release(
             $this->customerStockId,
             $this->quantities,
-            $this->note,
+            null,
             auth()->id(),
         );
 
-        $this->note = null;
         $this->resetQuantities();
         $this->dispatch('customer-stock-updated');
 
@@ -56,7 +52,13 @@ class ReleaseCustomerStock extends Component
     {
         return view('livewire.release-customer-stock', [
             'customerStock' => CustomerStock::query()
-                ->with(['customer', 'order', 'items.orderItem.productSku.product'])
+                ->with([
+                    'customer',
+                    'order',
+                    'items.orderItem.productSku.product',
+                    'releases.creator',
+                    'releases.items',
+                ])
                 ->findOrFail($this->customerStockId),
         ]);
     }

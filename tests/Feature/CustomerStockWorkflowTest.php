@@ -54,7 +54,6 @@ class CustomerStockWorkflowTest extends TestCase
         Livewire::actingAs($user)
             ->test(ReleaseCustomerStock::class, ['customerStockId' => $stock->id])
             ->set("quantities.{$stockItem->id}", 10)
-            ->set('note', 'Khách lấy đợt đầu')
             ->call('release')
             ->assertHasNoErrors();
 

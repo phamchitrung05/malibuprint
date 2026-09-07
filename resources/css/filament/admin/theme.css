@@ -21,6 +21,41 @@
     }
 }
 
+/* CSS của modal xuất kho phải nằm trong theme để không bị mất khi Livewire morph lại component. */
+.release-stock-modal table th,
+.release-stock-modal table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.release-stock-modal table th {
+    color: #475569;
+    font-weight: 600;
+}
+
+/* Filament đặt focus ring mặc định cho input; ô số lượng xuất cần phẳng hoàn toàn theo thiết kế modal. */
+.release-stock-modal .release-quantity-input,
+.release-stock-modal .release-quantity-input:focus,
+.release-stock-modal .release-quantity-input:focus-visible {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    --tw-ring-offset-width: 0 !important;
+    --tw-ring-width: 0 !important;
+}
+
+.release-stock-modal .active-tab::after {
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 2px;
+    border-radius: 999px;
+    background: #2563eb;
+    content: '';
+}
+
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
 @source '../../../../resources/views/filament/resources/orders/actions/**/*.blade.php';
