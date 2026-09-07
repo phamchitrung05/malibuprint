@@ -38,7 +38,11 @@ class CustomerStockResource extends Resource
         // Chỉ hiển thị lô tồn kho theo Order; dữ liệu legacy không có nguồn Order vẫn được giữ trong database.
         return parent::getEloquentQuery()
             ->whereNotNull('order_id')
-            ->with(['customer', 'order']);
+            ->when(
+                request()->integer('order_id'),
+                fn (Builder $query, int $orderId): Builder => $query->where('order_id', $orderId),
+            )
+            ->with(['customer', 'order', 'items']);
     }
 
     public static function getRelations(): array

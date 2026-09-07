@@ -66,6 +66,12 @@ class CustomerStockWorkflowTest extends TestCase
         $this->assertSame('delivered', $release->shipping->status);
         $this->assertFalse($order->refresh()->is_delivered);
         $this->assertSame(FulfillmentStatus::PartiallyReleased, $order->fulfillment_status);
+
+        $activityEvents = $order->activities()->oldest('id')->pluck('event')->all();
+        $this->assertLessThan(
+            array_search('shipping.created', $activityEvents, true),
+            array_search('customer_stock.released', $activityEvents, true),
+        );
     }
 
     public function test_customer_stock_order_cannot_use_single_delivery_payment_actions(): void
@@ -174,6 +180,7 @@ class CustomerStockWorkflowTest extends TestCase
         $this->assertNotNull($order->closed_at);
         $this->assertNotNull($stock->refresh()->closed_at);
         $this->assertSame(FulfillmentStatus::FullyReleased, $order->fulfillment_status);
+        $this->assertSame(1, $order->activities()->where('event', 'order.closed')->count());
         $this->assertDatabaseCount('payment', 2);
         $this->assertDatabaseCount('shipping', 2);
     }

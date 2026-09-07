@@ -115,15 +115,6 @@ class StockReleaseManager
                 $allocatedCents += $lineCents;
             }
 
-            // Nghiệp vụ xưởng xác định hàng đã giao ngay khi phiếu xuất được lập thành công.
-            $order->shipping()->create([
-                'stock_release_id' => $release->id,
-                'status' => 'delivered',
-                'shipped_at' => now(),
-                'delivered_at' => now(),
-                'confirmed_by' => $actorId,
-            ]);
-
             $order->forceFill([
                 'fulfillment_status' => $isFinalRelease
                     ? FulfillmentStatus::FullyReleased
@@ -137,6 +128,15 @@ class StockReleaseManager
                 'release_code' => $release->release_code,
                 'total_quantity' => $requestedQuantities->sum(),
                 'total_amount' => $release->total_amount,
+            ]);
+
+            // Ghi nhận xuất kho trước; sau đó mới xác nhận Shipping để timeline đúng nghiệp vụ thực tế.
+            $order->shipping()->create([
+                'stock_release_id' => $release->id,
+                'status' => 'delivered',
+                'shipped_at' => now(),
+                'delivered_at' => now(),
+                'confirmed_by' => $actorId,
             ]);
 
             return $release->load(['items.customerStockItem.orderItem.productSku.product', 'shipping']);

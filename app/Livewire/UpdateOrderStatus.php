@@ -7,6 +7,7 @@ use App\Enums\FulfillmentStatus;
 use App\Models\Order;
 use App\Services\CustomerStockManager;
 use App\Services\OrderActivityLogger;
+use App\Services\OrderClosureManager;
 use App\Services\PaymentManager;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
@@ -119,8 +120,9 @@ class UpdateOrderStatus extends Component
 
             $order->is_delivered = true;
             $order->fulfillment_status = FulfillmentStatus::FullyReleased;
-            $order->closed_at = $order->is_paid ? now() : null;
             $order->saveQuietly();
+
+            app(OrderClosureManager::class)->closeIfReady($order->fresh());
         });
 
         $this->updatedSuccessfully('Đã xác nhận giao hàng');

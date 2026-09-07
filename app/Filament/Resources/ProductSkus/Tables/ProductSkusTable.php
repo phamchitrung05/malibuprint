@@ -5,8 +5,9 @@ namespace App\Filament\Resources\ProductSkus\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Table;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 
 class ProductSkusTable
 {
@@ -24,7 +25,10 @@ class ProductSkusTable
                 //
             ])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->iconButton()
+                    ->icon(Heroicon::OutlinedPencilSquare)
+                    ->tooltip('Chỉnh sửa SKU'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

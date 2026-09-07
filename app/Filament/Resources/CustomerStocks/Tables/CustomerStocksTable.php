@@ -27,6 +27,10 @@ class CustomerStocksTable
                     ->iconButton()
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('success')
+                    // Khi mọi dòng tồn đã xuất hết thì chỉ giữ lại action xem lịch sử phiếu.
+                    ->visible(fn (CustomerStock $record): bool => $record->items->contains(
+                        fn ($item): bool => $item->released_quantity < $item->received_quantity,
+                    ))
                     ->modalHeading('Tồn kho và xuất hàng')
                     ->modalContent(fn (CustomerStock $record) => view('filament.resources.customer-stocks.actions.view-stock', [
                         'customerStock' => $record,

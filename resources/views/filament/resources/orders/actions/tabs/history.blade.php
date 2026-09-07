@@ -8,7 +8,8 @@
         <p class="rounded-lg bg-slate-50 p-4 text-sm text-slate-500">Chưa có hoạt động nào được ghi nhận.</p>
     @else
         <div class="space-y-4 border-l-2 border-slate-200 pl-5 text-sm">
-            @foreach ($order->activities as $activity)
+            {{-- Activity mới nhất nằm trên cùng; activity cũ hơn được đẩy xuống dưới timeline. --}}
+            @foreach ($order->activities->sortByDesc(fn ($activity): array => [$activity->created_at?->timestamp ?? 0, $activity->id]) as $activity)
                 <div class="relative rounded-lg bg-slate-50 p-4 before:absolute before:-left-[1.72rem] before:top-5 before:size-3 before:rounded-full before:bg-blue-500 before:ring-4 before:ring-white">
                     <div class="flex flex-wrap items-start justify-between gap-2">
                         <p class="font-semibold text-slate-800">{{ $activity->description }}</p>

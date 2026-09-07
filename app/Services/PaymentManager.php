@@ -60,8 +60,9 @@ class PaymentManager
 
             $order->forceFill([
                 'is_paid' => true,
-                'closed_at' => $order->is_delivered ? now() : null,
             ])->saveQuietly();
+
+            app(OrderClosureManager::class)->closeIfReady($order->fresh());
 
             return $payment;
         });
@@ -120,8 +121,9 @@ class PaymentManager
 
             $order->forceFill([
                 'is_paid' => $isClosed,
-                'closed_at' => $isClosed ? now() : null,
             ])->saveQuietly();
+
+            app(OrderClosureManager::class)->closeIfReady($order->fresh());
 
             if ($isClosed) {
                 $customerStock->forceFill(['closed_at' => now()])->save();

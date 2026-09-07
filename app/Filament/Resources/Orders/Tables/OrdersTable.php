@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources\Orders\Tables;
 
+use App\Enums\FulfillmentMode;
+use App\Filament\Resources\CustomerStocks\CustomerStockResource;
 use App\Models\Order;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
@@ -138,31 +137,21 @@ class OrdersTable
                     ->modalWidth('2xl')
                     // Component Livewire có nút lưu riêng nên ẩn submit mặc định của Filament action.
                     ->modalSubmitAction(false),
-                Action::make('manageAttachments')
-                    // Action độc lập với Edit để Order đã khóa vẫn có thể xem và bổ sung tài liệu.
-                    ->label('Quản lý tệp')
-                    ->tooltip('Quản lý tệp đính kèm')
+                Action::make('customerStock')
+                    ->label('Xem Customer Stock')
+                    ->tooltip('Mở tồn kho của Order')
                     ->iconButton()
-                    ->icon(Heroicon::OutlinedPaperClip)
+                    ->icon(Heroicon::OutlinedArchiveBox)
                     ->color('info')
-                    ->modalHeading('Quản lý tệp đính kèm')
-                    ->modalContent(fn (Order $record) => view('filament.resources.orders.actions.manage-attachments', [
-                        'order' => $record,
-                    ]))
-                    ->modalWidth('4xl')
-                    ->modalSubmitAction(false),
+                    ->visible(fn (Order $record): bool => $record->fulfillment_mode === FulfillmentMode::CustomerStock
+                        && $record->status === 'completed')
+                    ->url(fn (Order $record): string => CustomerStockResource::getUrl('index', [
+                        'order_id' => $record->id,
+                    ])),
                 EditAction::make()
                     ->iconButton()
                     ->icon(Heroicon::OutlinedPencilSquare)
                     ->visible(fn (Order $record): bool => ! in_array($record->status, ['completed', 'cancelled'], true)),
-                DeleteAction::make()
-                    ->iconButton()
-                    ->icon(Heroicon::OutlinedTrash),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
             ]);
     }
 }

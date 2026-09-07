@@ -43,6 +43,14 @@ class OrderWorkflowTest extends TestCase
             'subject_id' => $order->id,
             'event' => 'shipping.created',
         ]);
+        $this->assertDatabaseHas('activity_log', [
+            'subject_type' => Order::class,
+            'subject_id' => $order->id,
+            'event' => 'order.closed',
+            'description' => 'Đã kết thúc đơn hàng',
+        ]);
+        $this->assertSame(1, $order->activities()->where('event', 'order.closed')->count());
+        $this->assertEquals($order->order_date->timestamp, $order->customer->refresh()->last_order->timestamp);
     }
 
     public function test_pending_order_can_be_cancelled_without_a_reason(): void
@@ -109,6 +117,28 @@ class OrderWorkflowTest extends TestCase
         $this->assertTrue($order->refresh()->is_paid);
         $this->assertTrue($order->is_delivered);
         $this->assertNotNull($order->closed_at);
+        $this->assertSame(1, $order->activities()->where('event', 'order.closed')->count());
+    }
+
+    public function test_payment_closes_order_when_it_is_the_last_independent_step(): void
+    {
+        $user = User::factory()->create();
+        $order = $this->createOrder($user);
+
+        Livewire::actingAs($user)
+            ->test(UpdateOrderStatus::class, ['orderId' => $order->id])
+            ->call('startProcessing')
+            ->call('completeProduction')
+            ->call('confirmShipping')
+            ->call('confirmPayment')
+            ->assertHasNoErrors();
+
+        $order->refresh();
+
+        $this->assertTrue($order->is_delivered);
+        $this->assertTrue($order->is_paid);
+        $this->assertNotNull($order->closed_at);
+        $this->assertSame(1, $order->activities()->where('event', 'order.closed')->count());
     }
 
     public function test_order_totals_are_recalculated_from_its_items_and_discount(): void
