@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Customer;
-use App\Models\CustomerStock;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderSequence;
@@ -25,6 +24,9 @@ class DemoDataSeeder extends Seeder
     private const BUSINESS_TABLES = [
         'payment',
         'shipping',
+        'stock_release_items',
+        'stock_releases',
+        'customer_stock_items',
         'customer_stock',
         'order_item',
         'orders',
@@ -89,8 +91,8 @@ class DemoDataSeeder extends Seeder
             foreach (range(1, self::RECORD_COUNT) as $index) {
                 $orderDate = now()->startOfDay()->subDays(self::RECORD_COUNT - $index)->addHours(8 + ($index % 9));
                 $status = ['pending', 'processing', 'completed', 'completed', 'cancelled'][($index - 1) % 5];
-                $isPaid = $status !== 'cancelled' && $index % 2 === 0;
-                $isDelivered = $status !== 'cancelled' && $index % 3 === 0;
+                $isPaid = $status === 'completed' && $index % 2 === 0;
+                $isDelivered = $status === 'completed' && $index % 3 === 0;
                 $quantity = $faker->numberBetween(50, 1000);
                 $unitPrice = (int) $skus[$index - 1]->price;
                 $subtotal = $quantity * $unitPrice;
@@ -108,6 +110,8 @@ class DemoDataSeeder extends Seeder
                     'customer_id' => $customers[$index - 1]->id,
                     'order_date' => $orderDate,
                     'status' => $status,
+                    'fulfillment_status' => $isDelivered ? 'fully_released' : 'pending',
+                    'closed_at' => $isPaid && $isDelivered ? $orderDate->copy()->addDays(3) : null,
                     'is_delivered' => $isDelivered,
                     'is_paid' => $isPaid,
                     'subtotal' => $subtotal,
@@ -125,36 +129,29 @@ class DemoDataSeeder extends Seeder
                     'subtotal' => $subtotal,
                 ]);
 
-                Payment::create([
-                    'order_id' => $order->id,
-                    'payment_date' => $isPaid ? $orderDate->copy()->addDay() : $orderDate,
-                    'amount' => $total,
-                    'status' => $isPaid ? 'completed' : 'pending',
-                    'note' => $isPaid ? 'Đã thu đủ tiền đơn hàng.' : 'Đang chờ khách hàng thanh toán.',
-                    'confirmed_by' => $isPaid ? $userId : null,
-                ]);
+                // Payment và Shipping chỉ tồn tại khi admin đã xác nhận nghiệp vụ tương ứng.
+                if ($isPaid) {
+                    Payment::create([
+                        'order_id' => $order->id,
+                        'payment_date' => $orderDate->copy()->addDay(),
+                        'amount' => $total,
+                        'status' => 'completed',
+                        'note' => 'Đã thu đủ tiền đơn hàng.',
+                        'confirmed_by' => $userId,
+                    ]);
+                }
 
-                $shippingStatus = match (true) {
-                    $isDelivered => 'delivered',
-                    $status === 'completed' => 'shipping',
-                    default => 'pending',
-                };
-                $shippedAt = $shippingStatus === 'pending' ? null : $orderDate->copy()->addDays(2);
+                if ($isDelivered) {
+                    $shippedAt = $orderDate->copy()->addDays(2);
 
-                Shipping::create([
-                    'order_id' => $order->id,
-                    'status' => $shippingStatus,
-                    'shipped_at' => $shippedAt,
-                    'delivered_at' => $isDelivered ? $shippedAt?->copy()->addDay() : null,
-                    'confirmed_by' => $isDelivered ? $userId : null,
-                ]);
-
-                CustomerStock::create([
-                    'customer_id' => $customers[$index - 1]->id,
-                    'product_sku_id' => $skus[$index - 1]->id,
-                    'quantity' => $faker->numberBetween(0, 500),
-                    'note' => 'Tồn kho của khách hàng cho sản phẩm '.$products[$index - 1]->name.'.',
-                ]);
+                    Shipping::create([
+                        'order_id' => $order->id,
+                        'status' => 'delivered',
+                        'shipped_at' => $shippedAt,
+                        'delivered_at' => $shippedAt->copy()->addDay(),
+                        'confirmed_by' => $userId,
+                    ]);
+                }
             }
         });
     }

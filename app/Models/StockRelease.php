@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
+class StockRelease extends Model
+{
+    // Phiếu xuất là chứng từ giao hàng; trạng thái thu tiền được suy ra từ quan hệ payment.
+    protected $fillable = [
+        'uuid',
+        'release_code',
+        'customer_stock_id',
+        'released_at',
+        'total_amount',
+        'note',
+        'created_by',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'released_at' => 'datetime',
+            'total_amount' => 'decimal:2',
+        ];
+    }
+
+    public function customerStock(): BelongsTo
+    {
+        return $this->belongsTo(CustomerStock::class);
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(StockReleaseItem::class);
+    }
+
+    public function payment(): HasOne
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    public function shipping(): HasOne
+    {
+        return $this->hasOne(Shipping::class);
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+}

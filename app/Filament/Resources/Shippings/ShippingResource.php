@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\Shippings;
 
-use App\Filament\Resources\Shippings\Pages\CreateShipping;
-use App\Filament\Resources\Shippings\Pages\EditShipping;
 use App\Filament\Resources\Shippings\Pages\ListShippings;
 use App\Filament\Resources\Shippings\Schemas\ShippingForm;
 use App\Filament\Resources\Shippings\Tables\ShippingsTable;
@@ -45,8 +43,6 @@ class ShippingResource extends Resource
     {
         return [
             'index' => ListShippings::route('/'),
-            'create' => CreateShipping::route('/create'),
-            'edit' => EditShipping::route('/{record}/edit'),
         ];
     }
 }

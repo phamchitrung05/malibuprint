@@ -4,12 +4,9 @@ namespace App\Filament\Resources\CustomerStocks\Tables;
 
 use App\Models\CustomerStock;
 use Filament\Actions\Action;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Table;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Table;
 
 class CustomerStocksTable
 {
@@ -18,34 +15,36 @@ class CustomerStocksTable
         return $table
             ->columns([
                 TextColumn::make('customer.name')->label('Khách hàng')->searchable(),
-                TextColumn::make('productSku.sku_code')->label('SKU')->searchable(),
-                TextColumn::make('quantity')->label('Số lượng')->sortable(),
-                TextColumn::make('updated_at')->label('Cập nhật')->dateTime('d/m/Y H:i'),
+                TextColumn::make('order.order_code')->label('Mã Order')->searchable()->sortable(),
             ])
             ->filters([
                 //
             ])
             ->recordActions([
-                Action::make('releaseStock')
-                    ->label('Xuất kho')
-                    ->tooltip('Xuất kho')
+                Action::make('viewStock')
+                    ->label('Xem tồn kho')
+                    ->tooltip('Xem tồn kho và xuất hàng')
                     ->iconButton()
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('success')
-                    ->modalHeading('')
-                    ->modalContent(fn (CustomerStock $record) => view('filament.resources.customer-stocks.actions.release-stock', [
+                    ->modalHeading('Tồn kho và xuất hàng')
+                    ->modalContent(fn (CustomerStock $record) => view('filament.resources.customer-stocks.actions.view-stock', [
                         'customerStock' => $record,
                     ]))
                     ->modalWidth('7xl')
                     ->modalSubmitAction(false),
-                EditAction::make()
+                Action::make('releaseHistory')
+                    ->label('Lịch sử phiếu xuất')
+                    ->tooltip('Lịch sử phiếu xuất và xác nhận thu tiền')
                     ->iconButton()
-                    ->icon(Heroicon::OutlinedPencilSquare),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                    ->icon(Heroicon::OutlinedClock)
+                    ->color('info')
+                    ->modalHeading('Lịch sử phiếu xuất và thanh toán')
+                    ->modalContent(fn (CustomerStock $record) => view('filament.resources.customer-stocks.actions.release-history', [
+                        'customerStock' => $record,
+                    ]))
+                    ->modalWidth('5xl')
+                    ->modalSubmitAction(false),
             ]);
     }
 }

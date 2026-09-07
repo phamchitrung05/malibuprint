@@ -28,13 +28,13 @@ class OrdersTable
             ->columns([
                 TextColumn::make('order_code')->label('Mã đơn')->searchable()->sortable(),
                 TextColumn::make('customer.name')->label('Khách hàng')->searchable(),
-                TextColumn::make('order_date')->label('Ngày đặt')->dateTime('d/m/Y H:i')->sortable(),
+                TextColumn::make('delivery_date')->label('Ngày dự kiến giao')->date('d/m/Y')->sortable(),
                 TextColumn::make('status')
                     ->label('Trạng thái')
                     ->badge()
                     // Database giữ mã tiếng Anh, bảng chỉ chuyển đổi ở tầng hiển thị.
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'pending' => 'Đơn mới',
+                        'pending' => 'Mới tạo',
                         'processing' => 'Đang xử lý',
                         'completed' => 'Hoàn thành',
                         'cancelled' => 'Đã hủy',
@@ -64,7 +64,7 @@ class OrdersTable
                 SelectFilter::make('status')
                     ->label('Trạng thái')
                     ->options([
-                        'pending' => 'Chờ xử lý',
+                        'pending' => 'Mới tạo',
                         'processing' => 'Đang xử lý',
                         'completed' => 'Hoàn thành',
                         'cancelled' => 'Đã hủy',
@@ -82,8 +82,8 @@ class OrdersTable
                     ->label('Thanh toán')
                     ->trueLabel('Đã thanh toán')
                     ->falseLabel('Chưa thanh toán'),
-                Filter::make('order_date')
-                    ->label('Ngày đặt')
+                Filter::make('delivery_date')
+                    ->label('Ngày dự kiến giao')
                     ->form([
                         DatePicker::make('from')->label('Từ ngày'),
                         DatePicker::make('until')->label('Đến ngày'),
@@ -92,11 +92,11 @@ class OrdersTable
                         return $query
                             ->when(
                                 $data['from'] ?? null,
-                                fn (Builder $query, string $date): Builder => $query->whereDate('order_date', '>=', $date),
+                                fn (Builder $query, string $date): Builder => $query->whereDate('delivery_date', '>=', $date),
                             )
                             ->when(
                                 $data['until'] ?? null,
-                                fn (Builder $query, string $date): Builder => $query->whereDate('order_date', '<=', $date),
+                                fn (Builder $query, string $date): Builder => $query->whereDate('delivery_date', '<=', $date),
                             );
                     })
                     ->indicateUsing(function (array $data): array {

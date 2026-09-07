@@ -2,20 +2,55 @@
 
 namespace App\Models;
 
+use App\Enums\FulfillmentMode;
+use App\Enums\FulfillmentStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Spatie\Activitylog\Models\Activity;
 
 class Order extends Model
 {
-    protected $fillable = ['order_code', 'customer_id', 'order_date', 'status', 'subtotal', 'discount', 'total_amount', 'note', 'created_by', 'is_delivered', 'is_paid'];
+    protected $fillable = [
+        'order_code',
+        'customer_id',
+        'order_date',
+        'delivery_date',
+        'status',
+        'fulfillment_mode',
+        'fulfillment_status',
+        'closed_at',
+        'subtotal',
+        'discount',
+        'total_amount',
+        'note',
+        'created_by',
+        'is_delivered',
+        'is_paid',
+    ];
+
+    protected $attributes = [
+        'fulfillment_mode' => 'single',
+        'fulfillment_status' => 'pending',
+    ];
 
     protected function casts(): array
     {
         // Ngày và số tiền được ép kiểu để form và phép tính đơn hàng hoạt động chính xác.
-        return ['order_date' => 'datetime', 'subtotal' => 'decimal:2', 'discount' => 'decimal:2', 'total_amount' => 'decimal:2', 'is_delivered' => 'boolean', 'is_paid' => 'boolean'];
+        return [
+            'order_date' => 'datetime',
+            'delivery_date' => 'date',
+            'fulfillment_mode' => FulfillmentMode::class,
+            'fulfillment_status' => FulfillmentStatus::class,
+            'closed_at' => 'datetime',
+            'subtotal' => 'decimal:2',
+            'discount' => 'decimal:2',
+            'total_amount' => 'decimal:2',
+            'is_delivered' => 'boolean',
+            'is_paid' => 'boolean',
+        ];
     }
 
     public function customer(): BelongsTo
@@ -36,6 +71,11 @@ class Order extends Model
     public function shipping(): HasMany
     {
         return $this->hasMany(Shipping::class);
+    }
+
+    public function customerStock(): HasOne
+    {
+        return $this->hasOne(CustomerStock::class);
     }
 
     public function activities(): MorphMany

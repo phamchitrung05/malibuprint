@@ -2,10 +2,9 @@
 
 namespace App\Filament\Resources\CustomerStocks\Schemas;
 
-use Filament\Schemas\Schema;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Schemas\Schema;
 
 class CustomerStockForm
 {
@@ -13,9 +12,9 @@ class CustomerStockForm
     {
         return $schema
             ->components([
-                Select::make('customer_id')->label('Khách hàng')->relationship('customer', 'name')->searchable()->preload()->required(),
-                Select::make('product_sku_id')->label('SKU')->relationship('productSku', 'sku_code')->searchable()->preload()->required(),
-                TextInput::make('quantity')->label('Số lượng tồn')->numeric()->default(0)->required(),
+                // Customer Stock được sinh tự động từ Order; schema này chỉ phục vụ khả năng xem dữ liệu về sau.
+                Select::make('customer_id')->label('Khách hàng')->relationship('customer', 'name')->disabled(),
+                Select::make('order_id')->label('Order')->relationship('order', 'order_code')->disabled(),
                 Textarea::make('note')->label('Ghi chú')->columnSpanFull(),
             ]);
     }

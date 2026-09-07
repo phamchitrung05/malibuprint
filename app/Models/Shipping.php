@@ -2,13 +2,22 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Shipping extends Model
 {
     protected $table = 'shipping';
-    protected $fillable = ['order_id', 'status', 'shipped_at', 'delivered_at', 'confirmed_by'];
+
+    protected $fillable = [
+        'order_id',
+        'stock_release_id',
+        'status',
+        'shipped_at',
+        'delivered_at',
+        'confirmed_by',
+    ];
+
     public $timestamps = false;
 
     protected function casts(): array
@@ -16,5 +25,13 @@ class Shipping extends Model
         return ['shipped_at' => 'datetime', 'delivered_at' => 'datetime'];
     }
 
-    public function order(): BelongsTo { return $this->belongsTo(Order::class); }
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function stockRelease(): BelongsTo
+    {
+        return $this->belongsTo(StockRelease::class);
+    }
 }

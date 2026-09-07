@@ -2,11 +2,12 @@
 
 namespace App\Filament\Resources\Orders\Schemas;
 
+use App\Enums\FulfillmentMode;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
-use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Placeholder;
@@ -176,22 +177,21 @@ class OrderForm
                                         ->disabled()
                                         ->dehydrated(false)
                                         ->columnSpanFull(),
-                                    DateTimePicker::make('order_date')
-                                        ->label('Ngày tạo')
-                                        ->default(now())
-                                        ->seconds(false)
+                                    Select::make('fulfillment_mode')
+                                        ->label('Hình thức giao hàng')
+                                        ->options(collect(FulfillmentMode::cases())
+                                            ->mapWithKeys(fn (FulfillmentMode $mode): array => [$mode->value => $mode->label()])
+                                            ->all())
+                                        ->default(FulfillmentMode::Single->value)
                                         ->required()
+                                        // Hình thức giao được chốt lúc tạo để không đổi nguồn tồn khi Order đang sản xuất.
+                                        ->disabled(fn (string $operation): bool => $operation === 'edit')
                                         ->columnSpanFull(),
-                                    Select::make('status')
-                                        ->label('Trạng thái')
-                                        ->options([
-                                            'pending' => 'Chờ xử lý',
-                                            'processing' => 'Đang xử lý',
-                                            'completed' => 'Hoàn thành',
-                                            'cancelled' => 'Đã hủy',
-                                        ])
-                                        ->default('pending')
-                                        ->required()
+                                    DatePicker::make('delivery_date')
+                                        ->label('Ngày dự kiến giao')
+                                        ->default(now())
+                                        // Dữ liệu cũ có thể chưa có ngày dự kiến; chỉ bắt buộc với Order tạo mới.
+                                        ->required(fn (string $operation): bool => $operation === 'create')
                                         ->columnSpanFull(),
                                     Textarea::make('order_note')
                                         ->label('Ghi chú đơn hàng')

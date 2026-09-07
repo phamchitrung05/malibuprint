@@ -3,17 +3,16 @@
 namespace App\Filament\Resources\CustomerStocks\Pages;
 
 use App\Filament\Resources\CustomerStocks\CustomerStockResource;
-use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Livewire\Attributes\On;
 
 class ListCustomerStocks extends ListRecords
 {
     protected static string $resource = CustomerStockResource::class;
 
-    protected function getHeaderActions(): array
+    #[On('customer-stock-updated')]
+    public function refreshCustomerStocks(): void
     {
-        return [
-            CreateAction::make(),
-        ];
+        // Event từ modal làm Livewire render lại table; không cần truy vấn thủ công tại component con.
     }
 }

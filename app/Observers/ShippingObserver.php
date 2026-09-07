@@ -13,6 +13,7 @@ class ShippingObserver
     {
         $this->logger->log($shipping->order, 'shipping.created', 'Đã xác nhận giao hàng', [
             'shipping_id' => $shipping->id,
+            'stock_release_id' => $shipping->stock_release_id,
             'status' => $shipping->status,
             'delivered_at' => $shipping->delivered_at?->toDateTimeString(),
         ]);

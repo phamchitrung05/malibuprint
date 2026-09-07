@@ -13,6 +13,7 @@ class PaymentObserver
     {
         $this->logger->log($payment->order, 'payment.created', 'Đã ghi nhận thu tiền', [
             'payment_id' => $payment->id,
+            'stock_release_id' => $payment->stock_release_id,
             'amount' => $payment->amount,
             'status' => $payment->status,
         ]);

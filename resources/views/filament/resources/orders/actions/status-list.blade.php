@@ -19,16 +19,19 @@
         </p>
     @endif
 
-    @if ($order->status !== 'cancelled')
+    @if ($order->status !== 'cancelled' && $order->fulfillment_mode === \App\Enums\FulfillmentMode::CustomerStock)
+        <div class="rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-800 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-200">
+            Đơn này xuất nhiều đợt. Sau khi hoàn thành sản xuất, hãy quản lý giao hàng và xác nhận thu tiền tại Customer Stock.
+        </div>
+    @elseif ($order->status !== 'cancelled')
         <div class="grid gap-3 rounded-lg border border-slate-200 p-3 sm:grid-cols-2">
             <div class="space-y-2">
                 <p class="text-sm font-semibold text-slate-800">Thanh toán</p>
                 <p class="text-xs text-slate-500">Còn lại: {{ number_format($remainingAmount, 0, ',', '.') }}đ</p>
                 @if ($remainingAmount > 0)
-                    <input wire:model="paymentAmount" type="number" min="1" max="{{ $remainingAmount }}" step="1" placeholder="Số tiền thu" @disabled(! $canFulfill) class="block w-full rounded-lg border-slate-300 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60">
                     <input wire:model="paymentNote" type="text" maxlength="500" placeholder="Ghi chú (không bắt buộc)" @disabled(! $canFulfill) class="block w-full rounded-lg border-slate-300 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-60">
-                    @error('paymentAmount') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
-                    <button type="button" wire:click="confirmPayment" wire:loading.attr="disabled" wire:target="confirmPayment" @disabled(! $canFulfill) class="w-full rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300 disabled:opacity-60">Ghi nhận thu tiền</button>
+                    @error('payment') <p class="text-xs text-red-600">{{ $message }}</p> @enderror
+                    <button type="button" wire:click="confirmPayment" wire:loading.attr="disabled" wire:target="confirmPayment" @disabled(! $canFulfill) class="w-full rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-300 disabled:opacity-60">Xác nhận đã thu toàn bộ</button>
                 @else
                     <p class="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">Đã thanh toán đủ</p>
                 @endif

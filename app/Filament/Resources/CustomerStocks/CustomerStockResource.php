@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\CustomerStocks;
 
-use App\Filament\Resources\CustomerStocks\Pages\CreateCustomerStock;
-use App\Filament\Resources\CustomerStocks\Pages\EditCustomerStock;
 use App\Filament\Resources\CustomerStocks\Pages\ListCustomerStocks;
 use App\Filament\Resources\CustomerStocks\Schemas\CustomerStockForm;
 use App\Filament\Resources\CustomerStocks\Tables\CustomerStocksTable;
@@ -13,6 +11,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class CustomerStockResource extends Resource
@@ -34,6 +33,14 @@ class CustomerStockResource extends Resource
         return CustomerStocksTable::configure($table);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        // Chỉ hiển thị lô tồn kho theo Order; dữ liệu legacy không có nguồn Order vẫn được giữ trong database.
+        return parent::getEloquentQuery()
+            ->whereNotNull('order_id')
+            ->with(['customer', 'order']);
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -45,8 +52,6 @@ class CustomerStockResource extends Resource
     {
         return [
             'index' => ListCustomerStocks::route('/'),
-            'create' => CreateCustomerStock::route('/create'),
-            'edit' => EditCustomerStock::route('/{record}/edit'),
         ];
     }
 }

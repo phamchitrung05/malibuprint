@@ -26,9 +26,6 @@ class OrderWorkflowTest extends TestCase
         Livewire::test(UpdateOrderStatus::class, ['orderId' => $order->id])
             ->call('startProcessing')
             ->call('completeProduction')
-            ->set('paymentAmount', '600000')
-            ->call('confirmPayment')
-            ->set('paymentAmount', '400000')
             ->call('confirmPayment')
             ->call('confirmShipping')
             ->assertHasNoErrors();
@@ -38,8 +35,9 @@ class OrderWorkflowTest extends TestCase
         $this->assertSame('completed', $order->status);
         $this->assertTrue($order->is_paid);
         $this->assertTrue($order->is_delivered);
-        $this->assertCount(2, $order->payments);
+        $this->assertCount(1, $order->payments);
         $this->assertCount(1, $order->shipping);
+        $this->assertDatabaseCount('customer_stock', 0);
         $this->assertDatabaseHas('activity_log', [
             'subject_type' => Order::class,
             'subject_id' => $order->id,
@@ -72,9 +70,8 @@ class OrderWorkflowTest extends TestCase
         $this->actingAs($user);
 
         Livewire::test(UpdateOrderStatus::class, ['orderId' => $order->id])
-            ->set('paymentAmount', '1000000')
             ->call('confirmPayment')
-            ->assertStatus(422);
+            ->assertHasErrors('payment');
 
         Livewire::test(UpdateOrderStatus::class, ['orderId' => $order->id])
             ->call('confirmShipping')
@@ -82,6 +79,36 @@ class OrderWorkflowTest extends TestCase
 
         $this->assertDatabaseCount('payment', 0);
         $this->assertDatabaseCount('shipping', 0);
+    }
+
+    public function test_legacy_pending_payment_and_shipping_are_confirmed_without_creating_duplicates(): void
+    {
+        $user = User::factory()->create();
+        $order = $this->createOrder($user);
+        $order->forceFill(['status' => 'completed'])->saveQuietly();
+        $payment = $order->payments()->create([
+            'payment_date' => now(),
+            'amount' => 0,
+            'status' => 'pending',
+        ]);
+        $shipping = $order->shipping()->create([
+            'status' => 'pending',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(UpdateOrderStatus::class, ['orderId' => $order->id])
+            ->call('confirmPayment')
+            ->call('confirmShipping')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseCount('payment', 1);
+        $this->assertDatabaseCount('shipping', 1);
+        $this->assertSame('completed', $payment->refresh()->status);
+        $this->assertSame('1000000.00', $payment->amount);
+        $this->assertSame('delivered', $shipping->refresh()->status);
+        $this->assertTrue($order->refresh()->is_paid);
+        $this->assertTrue($order->is_delivered);
+        $this->assertNotNull($order->closed_at);
     }
 
     public function test_order_totals_are_recalculated_from_its_items_and_discount(): void

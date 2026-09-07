@@ -2,8 +2,6 @@
 
 namespace App\Filament\Resources\OrderItems;
 
-use App\Filament\Resources\OrderItems\Pages\CreateOrderItem;
-use App\Filament\Resources\OrderItems\Pages\EditOrderItem;
 use App\Filament\Resources\OrderItems\Pages\ListOrderItems;
 use App\Filament\Resources\OrderItems\Schemas\OrderItemForm;
 use App\Filament\Resources\OrderItems\Tables\OrderItemsTable;
@@ -44,8 +42,6 @@ class OrderItemResource extends Resource
     {
         return [
             'index' => ListOrderItems::route('/'),
-            'create' => CreateOrderItem::route('/create'),
-            'edit' => EditOrderItem::route('/{record}/edit'),
         ];
     }
 }

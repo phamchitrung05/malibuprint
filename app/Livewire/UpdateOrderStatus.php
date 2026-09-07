@@ -2,8 +2,12 @@
 
 namespace App\Livewire;
 
+use App\Enums\FulfillmentMode;
+use App\Enums\FulfillmentStatus;
 use App\Models\Order;
+use App\Services\CustomerStockManager;
 use App\Services\OrderActivityLogger;
+use App\Services\PaymentManager;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
@@ -14,8 +18,6 @@ class UpdateOrderStatus extends Component
 {
     #[Locked]
     public int $orderId;
-
-    public ?string $paymentAmount = null;
 
     public ?string $paymentNote = null;
 
@@ -31,7 +33,23 @@ class UpdateOrderStatus extends Component
 
     public function completeProduction(): void
     {
-        $this->transitionProduction('processing', 'completed', 'Đã hoàn thành sản xuất');
+        DB::transaction(function (): void {
+            $order = $this->lockedOrder();
+            abort_unless($order->status === 'processing', 422);
+
+            $order->status = 'completed';
+            $order->saveQuietly();
+
+            // Đơn lưu kho được nhập toàn bộ thành phẩm ngay trong transaction hoàn thành sản xuất.
+            app(CustomerStockManager::class)->createForCompletedOrder($order->id, auth()->id());
+
+            app(OrderActivityLogger::class)->log($order, 'order.status_changed', 'Đã hoàn thành sản xuất', [
+                'old' => ['status' => 'processing'],
+                'new' => ['status' => 'completed'],
+            ]);
+        });
+
+        $this->updatedSuccessfully('Đã hoàn thành sản xuất');
     }
 
     public function cancelOrder(): void
@@ -56,31 +74,18 @@ class UpdateOrderStatus extends Component
     public function confirmPayment(): void
     {
         $this->validate([
-            'paymentAmount' => ['required', 'numeric', 'gt:0'],
             'paymentNote' => ['nullable', 'string', 'max:500'],
         ]);
 
-        DB::transaction(function (): void {
-            $order = $this->lockedOrder();
-            abort_unless($order->status === 'completed', 422, 'Chỉ được thu tiền khi đơn hàng đã hoàn thành.');
+        abort_unless(auth()->check(), 403);
 
-            $paidAmount = (float) $order->payments()->where('status', 'completed')->sum('amount');
-            $remainingAmount = max(0, (float) $order->total_amount - $paidAmount);
-            abort_if((float) $this->paymentAmount > $remainingAmount, 422, 'Số tiền thu vượt quá số tiền còn lại.');
+        app(PaymentManager::class)->confirmSingleOrder(
+            $this->orderId,
+            $this->paymentNote,
+            auth()->id(),
+        );
 
-            $order->payments()->create([
-                'payment_date' => now(),
-                'amount' => $this->paymentAmount,
-                'status' => 'completed',
-                'note' => $this->paymentNote,
-                'confirmed_by' => auth()->id(),
-            ]);
-
-            $order->is_paid = $order->payments()->where('status', 'completed')->sum('amount') >= (float) $order->total_amount;
-            $order->saveQuietly();
-        });
-
-        $this->reset('paymentAmount', 'paymentNote');
+        $this->reset('paymentNote');
         $this->updatedSuccessfully('Đã ghi nhận thanh toán');
     }
 
@@ -89,16 +94,32 @@ class UpdateOrderStatus extends Component
         DB::transaction(function (): void {
             $order = $this->lockedOrder();
             abort_unless($order->status === 'completed', 422, 'Chỉ được giao hàng khi đơn hàng đã hoàn thành.');
+            abort_unless($order->fulfillment_mode === FulfillmentMode::Single, 422, 'Đơn lưu kho phải được giao bằng phiếu xuất kho.');
             abort_if($order->is_delivered, 422);
 
-            $order->shipping()->create([
+            $shippingData = [
                 'status' => 'delivered',
                 'shipped_at' => now(),
                 'delivered_at' => now(),
                 'confirmed_by' => auth()->id(),
-            ]);
+            ];
+            $pendingShipping = $order->shipping()->where('status', 'pending')->lockForUpdate()->first();
+
+            if ($pendingShipping) {
+                // Dữ liệu legacy có thể đã có Shipping pending; cập nhật record cũ thay vì tạo lần giao thứ hai.
+                $pendingShipping->forceFill($shippingData)->saveQuietly();
+
+                app(OrderActivityLogger::class)->log($order, 'shipping.confirmed', 'Đã xác nhận giao hàng chờ', [
+                    'shipping_id' => $pendingShipping->id,
+                    'status' => 'delivered',
+                ]);
+            } else {
+                $order->shipping()->create($shippingData);
+            }
 
             $order->is_delivered = true;
+            $order->fulfillment_status = FulfillmentStatus::FullyReleased;
+            $order->closed_at = $order->is_paid ? now() : null;
             $order->saveQuietly();
         });
 
