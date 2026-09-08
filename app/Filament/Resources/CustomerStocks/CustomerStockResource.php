@@ -21,7 +21,7 @@ class CustomerStockResource extends Resource
     // Tồn kho gắn với khách hàng nên dùng chung mục Custommer.
     protected static string|UnitEnum|null $navigationGroup = 'Custommer';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBox;
 
     public static function form(Schema $schema): Schema
     {

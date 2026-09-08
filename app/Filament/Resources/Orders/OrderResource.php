@@ -24,7 +24,7 @@ class OrderResource extends Resource
     // Đơn hàng thuộc quy trình bán hàng nên nằm trong nhóm Shop.
     protected static string|UnitEnum|null $navigationGroup = 'Shop';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShoppingCart;
 
     public static function form(Schema $schema): Schema
     {

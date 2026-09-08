@@ -50,6 +50,15 @@ class AdminPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
+            // Khai báo tường minh để các nhóm menu không bị Filament sắp xếp theo bảng chữ cái.
+            ->navigationGroups([
+                'Shop',
+                'Custommer',
+                'Kho hàng',
+                'Thanh toán',
+                'Shipping',
+                'Hệ thống',
+            ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,

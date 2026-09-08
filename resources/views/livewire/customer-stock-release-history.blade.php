@@ -1,7 +1,7 @@
 <div x-data="{ confirmReleaseId: null }" class="mt-5 overflow-hidden rounded-xl border border-slate-200">
     {{-- Payment chỉ được tạo khi người dùng xác nhận phiếu xuất tương ứng. --}}
-    <div class="overflow-x-auto">
-        <table class="w-full min-w-[1160px] border-collapse">
+    <div class="overflow-y-auto inventory-modal-scroll h22vh">
+        <table class="w-full border-collapse">
             <thead class="bg-slate-100/90">
                 <tr>
                     <th class="px-5 py-4 text-left text-sm font-semibold text-slate-600">STT</th>

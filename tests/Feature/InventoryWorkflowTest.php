@@ -243,7 +243,28 @@ class InventoryWorkflowTest extends TestCase
         $this->assertSame('Kiểm kê thiếu thực tế', $movement->reason);
     }
 
-    public function test_inventory_page_displays_products_and_opens_empty_sku_modal(): void
+    public function test_product_inventory_receive_action_increases_stock_and_records_movement(): void
+    {
+        [$user, , $sku] = $this->createSingleSkuOrder();
+
+        Livewire::actingAs($user)
+            ->test(ProductInventory::class)
+            ->set('adjustmentQuantity', 5000)
+            ->set('adjustmentReason', 'Nhập bổ sung từ nhà cung cấp')
+            ->call('receiveInventory', $sku->id)
+            ->assertHasNoErrors();
+
+        $this->assertSame(5100, $sku->refresh()->stock);
+        $this->assertDatabaseHas('inventory_movements', [
+            'product_sku_id' => $sku->id,
+            'quantity' => 5000,
+            'balance_before' => 100,
+            'balance_after' => 5100,
+            'reason' => 'Nhập bổ sung từ nhà cung cấp',
+        ]);
+    }
+
+    public function test_inventory_page_displays_products_and_sku_inventory_modal(): void
     {
         [$user, , $firstSku, $secondSku] = $this->createOrderWithTwoSkus();
         $secondSku->forceFill(['stock' => 0])->saveQuietly();
@@ -255,7 +276,13 @@ class InventoryWorkflowTest extends TestCase
             ->assertSee('Tổng tồn khả dụng')
             ->assertSee('Số SKU')
             ->mountTableAction('viewSkuInventory', $product->getKey())
-            ->assertSee("Tồn kho SKU - {$product->name}");
+            ->assertMountedActionModalSee([
+                "Tồn kho SKU - {$product->name}",
+                $firstSku->sku_code,
+                $secondSku->sku_code,
+                "Lịch sử xuất nhập: {$firstSku->sku_code}",
+                "Order đang được cấp: {$firstSku->sku_code}",
+            ]);
     }
 
     public function test_initialize_command_allocates_stock_for_existing_active_orders(): void

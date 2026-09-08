@@ -20,7 +20,7 @@ class PaymentResource extends Resource
     // Các phiếu thanh toán được gom vào mục nghiệp vụ riêng.
     protected static string|UnitEnum|null $navigationGroup = 'Thanh toán';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCreditCard;
 
     public static function form(Schema $schema): Schema
     {

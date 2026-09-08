@@ -40,6 +40,11 @@ class CustomerStockWorkflowTest extends TestCase
         $this->assertSame(0, $stock->items()->sole()->released_quantity);
         $this->assertSame(FulfillmentStatus::Ready, $order->refresh()->fulfillment_status);
 
+        Livewire::actingAs($user)
+            ->test(ReleaseCustomerStock::class, ['customerStockId' => $stock->id])
+            ->assertViewHas('totalRemainingQuantity', 100)
+            ->assertViewHas('remainingStockValue', 1000000.0);
+
         // Gọi lại manager mô phỏng retry của request; unique order_id phải giữ đúng một lô và một dòng tồn.
         app(CustomerStockManager::class)->createForCompletedOrder($order->id, $user->id);
         $this->assertDatabaseCount('customer_stock', 1);

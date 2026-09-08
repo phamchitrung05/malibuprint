@@ -14,7 +14,7 @@
 
 <div
     x-data="{ tab: 'inventory' }"
-    class="release-stock-modal flex-col overflow-hidden text-slate-900 order-view-modal flex h-full min-h-0"
+    class="release-stock-modal flex-col overflow-hidden text-slate-900 flex h-full min-h-0"
 >
     {{-- Header của giao diện thay thế hoàn toàn tiêu đề mặc định của Filament modal. --}}
     <div class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
@@ -30,7 +30,7 @@
         </div>
     </div>
 
-    <div class="min-h-0 flex-1 overflow-y-auto bg-slate-50/60 p-5 ">
+    <div class="min-h-0 flex-1 overflow-y-auto bg-slate-50/60 p-5 order-view-modal">
         <section class="rounded-xl t-2 rounded-xl border border-blue-200
                            bg-gradient-to-r from-blue-50/80 via-white to-blue-50/60
                            px-2 py-2">
@@ -117,7 +117,7 @@
                             class="mt-1 text-[29px] font-bold leading-none
                                            tracking-tight text-blue-600"
                         >
-                            900 cái
+                            {{ number_format($totalRemainingQuantity) }} sản phẩm
                         </div>
                     </div>
 
@@ -162,7 +162,7 @@
                             class="mt-1 whitespace-nowrap text-[29px]
                                            font-bold leading-none tracking-tight text-blue-600"
                         >
-                            24,500,000 đ
+                            {{ number_format($remainingStockValue, 0, ',', '.') }} đ
                         </div>
                     </div>
 
@@ -309,7 +309,7 @@
         <div x-show="tab === 'history'" x-cloak>
             <div class="overflow-hidden rounded-xl border border-slate-200">
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[900px] border-collapse">
+                    <table class="w-full min-w-[500px] border-collapse">
                         <thead>
                         <tr class="bg-slate-100/90 text-left">
                             <th>Mã phiếu</th>

@@ -36,6 +36,10 @@
     --modal-max-h: 850px;
 }
 
+.order-view-modal-window.s950{
+    --modal-max-h: 950px;
+}
+
 .order-view-modal-window.sm{
     --modal-max-h: 650px;
 }
@@ -96,6 +100,29 @@
     border-radius: 999px;
     background: #2563eb;
     content: '';
+}
+
+.inventory-modal-scroll {
+    --modal-max-h: 60vh;
+
+    max-height: var(--modal-max-h);
+    overflow: auto;
+    scrollbar-width: none;
+}
+
+.inventory-modal-scroll.h22vh{
+    --modal-max-h: 22vh;
+}
+
+.inventory-modal-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.inventory-modal-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #f8fafc;
 }
 
 @source '../../../../app/Filament/**/*';

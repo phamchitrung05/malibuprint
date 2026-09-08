@@ -50,16 +50,28 @@ class ReleaseCustomerStock extends Component
 
     public function render(): View
     {
+        $customerStock = CustomerStock::query()
+            ->with([
+                'customer',
+                'order',
+                'items.orderItem.productSku.product',
+                'releases.creator',
+                'releases.items',
+            ])
+            ->findOrFail($this->customerStockId);
+
+        // Hai chỉ số tổng quan chỉ tính phần hàng còn nằm trong kho của khách, không gồm hàng đã xuất.
+        $totalRemainingQuantity = $customerStock->items->sum(
+            fn ($item): int => $item->remainingQuantity(),
+        );
+        $remainingStockValue = $customerStock->items->sum(
+            fn ($item): float => $item->remainingQuantity() * (float) $item->orderItem->unit_price,
+        );
+
         return view('livewire.release-customer-stock', [
-            'customerStock' => CustomerStock::query()
-                ->with([
-                    'customer',
-                    'order',
-                    'items.orderItem.productSku.product',
-                    'releases.creator',
-                    'releases.items',
-                ])
-                ->findOrFail($this->customerStockId),
+            'customerStock' => $customerStock,
+            'totalRemainingQuantity' => $totalRemainingQuantity,
+            'remainingStockValue' => $remainingStockValue,
         ]);
     }
 

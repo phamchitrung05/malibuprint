@@ -22,7 +22,7 @@ class CustomerResource extends Resource
     // Nhóm chung khách hàng và tồn kho khách theo yêu cầu điều hướng quản trị.
     protected static string|UnitEnum|null $navigationGroup = 'Custommer';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
     public static function form(Schema $schema): Schema
     {

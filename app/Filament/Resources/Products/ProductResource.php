@@ -22,7 +22,7 @@ class ProductResource extends Resource
     // Gom sản phẩm vào nhóm Shop để menu quản trị phản ánh nghiệp vụ bán hàng.
     protected static string|UnitEnum|null $navigationGroup = 'Shop';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCube;
 
     public static function form(Schema $schema): Schema
     {

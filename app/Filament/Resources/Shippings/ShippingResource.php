@@ -18,9 +18,9 @@ class ShippingResource extends Resource
     protected static ?string $model = Shipping::class;
 
     // Thông tin giao hàng được hiển thị trong nhóm vận chuyển riêng.
-    protected static string|UnitEnum|null $navigationGroup = 'Giao hàng';
+    protected static string|UnitEnum|null $navigationGroup = 'Shipping';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
 
     public static function form(Schema $schema): Schema
     {
