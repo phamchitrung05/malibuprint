@@ -40,8 +40,15 @@
     --modal-max-h: 950px;
 }
 
-.order-view-modal-window.sm{
-    --modal-max-h: 650px;
+.order-view-modal-window.s700{
+    --modal-max-h: 700px;
+}
+
+.order-view-modal-window.s850{
+    --modal-max-h: 850px;
+}
+.order-view-modal-window.s800{
+    --modal-max-h: 800px;
 }
 
 @media (max-width: 640px) {

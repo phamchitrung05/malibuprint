@@ -43,67 +43,14 @@ class ProductForm
                                         ->required(),
                                     Select::make('product_type')
                                         ->label('Danh mục')
-                                        ->options([
-                                            'in_ly' => 'In ly nhựa',
-                                            'in_card' => 'In ấn văn phòng',
-                                            'in_menu' => 'In menu',
-                                            'in_hop' => 'In hộp',
-                                            'in_banner' => 'In banner',
-                                        ])
+                                        ->options(config('product.product_type'))
+                                        ->default(config('product.default_product_type'))
+                                        ->selectablePlaceholder(false)
                                         ->searchable()
                                         ->required(),
                                     TextInput::make('unit')
                                         ->label('Đơn vị tính')
                                         ->required(),
-                                ]),
-                            Section::make('SKU')
-                                ->description('Thêm các mã SKU, giá bán và số lượng tồn kho của sản phẩm')
-                                ->icon(Heroicon::OutlinedQueueList)
-                                ->schema([
-                                    Repeater::make('skus')
-                                        ->relationship()
-                                        ->hiddenLabel()
-                                        ->schema([
-                                            TextInput::make('sku_code')
-                                                ->label('Mã SKU')
-                                                ->placeholder('LY-500ML')
-                                                ->required()
-                                                ->distinct()
-                                                ->maxLength(100),
-                                            TextInput::make('price')
-                                                ->label('Giá')
-                                                ->numeric()
-                                                ->minValue(0)
-                                                ->default(0)
-                                                ->suffix('đ')
-                                                ->required(),
-                                            TextInput::make('stock')
-                                                ->label('Tồn đầu kỳ')
-                                                ->helperText('SKU đã lưu phải điều chỉnh tồn từ màn hình Tồn kho SKU.')
-                                                ->numeric()
-                                                ->minValue(0)
-                                                ->default(0)
-                                                ->required()
-                                                ->disabledOn('edit')
-                                                ->dehydrated(fn (string $operation): bool => $operation === 'create'),
-                                            Select::make('status')
-                                                ->label('Trạng thái SKU')
-                                                ->options(StatusApp::options('product_sku.status'))
-                                                ->default(StatusApp::default('product_sku.status'))
-                                                ->required(),
-                                        ])
-                                        ->columns([
-                                            'default' => 1,
-                                            'md' => 4,
-                                        ])
-                                        ->defaultItems(1)
-                                        ->minItems(1)
-                                        ->addActionLabel('Thêm SKU')
-                                        ->itemLabel(fn (array $state): ?string => filled($state['sku_code'] ?? null) ? $state['sku_code'] : 'SKU mới')
-                                        ->collapsible()
-                                        // SKU đã có movement phải được ngừng bán thay vì xóa để giữ lịch sử tồn kho.
-                                        ->deletable(fn (string $operation): bool => $operation === 'create')
-                                        ->reorderable(false),
                                 ]),
                         ]),
                     Grid::make(1)
@@ -120,6 +67,56 @@ class ProductForm
                                         ->helperText('Sản phẩm sẽ hiển thị trên hệ thống')
                                         ->default(true),
                                 ]),
+                        ]),
+                    Section::make('SKU')
+                        ->description('Thêm các mã SKU, giá bán và số lượng tồn kho của sản phẩm')
+                        ->icon(Heroicon::OutlinedQueueList)
+                        ->columnSpanFull()
+                        ->schema([
+                            Repeater::make('skus')
+                                ->relationship()
+                                ->hiddenLabel()
+                                ->schema([
+                                    TextInput::make('sku_code')
+                                        ->label('Mã SKU')
+                                        ->placeholder('LY-500ML')
+                                        ->required()
+                                        ->distinct()
+                                        ->maxLength(100),
+                                    TextInput::make('price')
+                                        ->label('Giá')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->default(0)
+                                        ->suffix('đ')
+                                        ->required(),
+                                    TextInput::make('stock')
+                                        ->label('Tồn đầu kỳ')
+                                        ->helperText('SKU đã lưu phải điều chỉnh tồn từ màn hình Tồn kho SKU.')
+                                        ->numeric()
+                                        ->minValue(0)
+                                        ->default(0)
+                                        ->required()
+                                        ->disabledOn('edit')
+                                        ->dehydrated(fn (string $operation): bool => $operation === 'create'),
+                                    Select::make('status')
+                                        ->label('Trạng thái SKU')
+                                        ->options(StatusApp::options('product_sku.status'))
+                                        ->default(StatusApp::default('product_sku.status'))
+                                        ->required(),
+                                ])
+                                ->columns([
+                                    'default' => 1,
+                                    'md' => 4,
+                                ])
+                                ->defaultItems(1)
+                                ->minItems(1)
+                                ->addActionLabel('Thêm SKU')
+                                ->itemLabel(fn (array $state): ?string => filled($state['sku_code'] ?? null) ? $state['sku_code'] : 'SKU mới')
+                                ->collapsible()
+                                // SKU đã có movement phải được ngừng bán thay vì xóa để giữ lịch sử tồn kho.
+                                ->deletable(fn (string $operation): bool => $operation === 'create')
+                                ->reorderable(false),
                         ]),
                 ]),
         ]);

@@ -55,8 +55,10 @@ class ReleaseCustomerStock extends Component
                 'customer',
                 'order',
                 'items.orderItem.productSku.product',
+                'items.orderItem.services',
                 'releases.creator',
-                'releases.items',
+                'releases.items.customerStockItem.orderItem.productSku.product',
+                'releases.items.services',
             ])
             ->findOrFail($this->customerStockId);
 
@@ -67,11 +69,29 @@ class ReleaseCustomerStock extends Component
         $remainingStockValue = $customerStock->items->sum(
             fn ($item): float => $item->remainingQuantity() * (float) $item->orderItem->unit_price,
         );
+        // Tổng dịch vụ của Order dùng subtotal snapshot, không phụ thuộc giá catalog hiện tại.
+        $totalServiceValue = $customerStock->items->sum(
+            fn ($item): float => $item->orderItem->services->sum(fn ($service): float => (float) $service->subtotal),
+        );
+        $releaseProductPreview = $customerStock->items->sum(function ($item): float {
+            $quantity = min($item->remainingQuantity(), max(0, (int) ($this->quantities[$item->id] ?? 0)));
+
+            return $quantity * (float) $item->orderItem->unit_price;
+        });
+        $releaseServicePreview = $customerStock->items->sum(function ($item): float {
+            $quantity = min($item->remainingQuantity(), max(0, (int) ($this->quantities[$item->id] ?? 0)));
+
+            return $quantity
+                * $item->orderItem->services->sum(fn ($service): float => (float) $service->unit_price);
+        });
 
         return view('livewire.release-customer-stock', [
             'customerStock' => $customerStock,
             'totalRemainingQuantity' => $totalRemainingQuantity,
             'remainingStockValue' => $remainingStockValue,
+            'totalServiceValue' => $totalServiceValue,
+            'releaseProductPreview' => $releaseProductPreview,
+            'releaseServicePreview' => $releaseServicePreview,
         ]);
     }
 

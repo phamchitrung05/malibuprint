@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class OrderItem extends Model
@@ -32,5 +33,10 @@ class OrderItem extends Model
     public function customerStockItem(): HasOne
     {
         return $this->hasOne(CustomerStockItem::class);
+    }
+
+    public function services(): HasMany
+    {
+        return $this->hasMany(OrderItemService::class);
     }
 }

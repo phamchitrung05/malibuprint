@@ -15,6 +15,10 @@ class StockRelease extends Model
         'release_code',
         'customer_stock_id',
         'released_at',
+        'gross_product_amount',
+        'gross_service_amount',
+        'allocated_discount',
+        'reconciliation_adjustment',
         'total_amount',
         'allocated_shipping_fee',
         'note',
@@ -25,6 +29,10 @@ class StockRelease extends Model
     {
         return [
             'released_at' => 'datetime',
+            'gross_product_amount' => 'decimal:2',
+            'gross_service_amount' => 'decimal:2',
+            'allocated_discount' => 'decimal:2',
+            'reconciliation_adjustment' => 'decimal:2',
             'total_amount' => 'decimal:2',
             'allocated_shipping_fee' => 'decimal:2',
         ];

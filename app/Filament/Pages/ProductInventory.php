@@ -40,6 +40,11 @@ class ProductInventory extends Page implements HasTable
     // Theo nghiệp vụ hiện tại, lý do mặc định của một lần nhập là từ nhà phân phối.
     public string $adjustmentReason = 'Từ nhà phân phối';
 
+    // Form giảm tồn dùng state riêng để không lấy nhầm dữ liệu đang nhập ở form tăng tồn.
+    public ?int $decreaseQuantity = null;
+
+    public string $decreaseReason = 'Điều chỉnh giảm tồn kho';
+
     // Khoảng ngày lọc lịch sử movement; để null khi người dùng chưa chọn bộ lọc.
     public ?string $historyStartDate = null;
 
@@ -82,6 +87,36 @@ class ProductInventory extends Page implements HasTable
             ->send();
     }
 
+    public function decreaseInventory(int $productSkuId): void
+    {
+        // Người dùng nhập số dương; hệ thống đổi sang số âm khi ghi movement giảm tồn.
+        $this->validate([
+            'decreaseQuantity' => ['required', 'integer', 'min:1'],
+            'decreaseReason' => ['required', 'string', 'max:500'],
+        ], [], [
+            'decreaseQuantity' => 'số lượng giảm',
+            'decreaseReason' => 'lý do giảm tồn',
+        ]);
+
+        abort_unless(auth()->check(), 403);
+
+        // InventoryManager khóa SKU và từ chối transaction nếu số lượng giảm vượt tồn khả dụng.
+        app(InventoryManager::class)->adjust(
+            $productSkuId,
+            -$this->decreaseQuantity,
+            trim($this->decreaseReason),
+            auth()->id(),
+        );
+
+        $this->decreaseQuantity = null;
+        $this->decreaseReason = 'Điều chỉnh giảm tồn kho';
+
+        Notification::make()
+            ->title('Đã giảm tồn kho')
+            ->success()
+            ->send();
+    }
+
     public function table(Table $table): Table
     {
         return $table
@@ -104,7 +139,8 @@ class ProductInventory extends Page implements HasTable
                     ->sortable(),
                 TextColumn::make('product_type')
                     ->label('Loại')
-                    ->badge(),
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => config("product.product_type.{$state}", $state)),
                 TextColumn::make('unit')
                     ->label('Đơn vị'),
                 TextColumn::make('skus_count')

@@ -13,19 +13,12 @@
     $lowStockCount = $skus->filter(
         fn ($sku): bool => $sku->stock > 0 && $sku->stock <= $lowStockThreshold,
     )->count();
-    $productType = match ($product->product_type) {
-        'in_ly' => 'In ly nhựa',
-        'in_card' => 'In ấn văn phòng',
-        'in_menu' => 'In menu',
-        'in_hop' => 'In hộp',
-        'in_banner' => 'In banner',
-        default => $product->product_type,
-    };
+    $productType = config("product.product_type.{$product->product_type}", $product->product_type);
 @endphp
 
 {{-- Modal content --}}
 <div
-        x-data="{ receiveSku: null, activeSku: null, modal: null }"
+        x-data="{ adjustmentSku: null, adjustmentMode: null, activeSku: null, modal: null }"
     class="flex h-full min-h-0 flex-col overflow-hidden"
 >
 
@@ -408,25 +401,30 @@
 
                                         <button
                                             type="button"
-                                            title="Nhập hàng"
-                                                x-on:click="receiveSku = receiveSku === {{ $sku->id }} ? null : {{ $sku->id }}"
+                                            title="Nhập hàng tăng"
+                                            x-on:click="adjustmentSku = adjustmentSku === {{ $sku->id }} && adjustmentMode === 'increase' ? null : {{ $sku->id }}; adjustmentMode = 'increase'"
                                             class="flex size-8 items-center justify-center
                                                                 rounded-lg border border-slate-200 bg-white
                                                                 text-slate-500 transition
                                                                hover:border-blue-200 hover:bg-blue-50
                                                                hover:text-blue-600"
                                         >
-                                            <svg class="size-4" fill="none" viewBox="0 0 24 24"
-                                                 stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
-                                                      d="M12 3v12m0-12-4 4m4-4 4 4M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>
-                                            </svg>
+                                            <x-heroicon-o-arrow-up-tray class="size-4" />
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            title="Nhập hàng giảm"
+                                            x-on:click="adjustmentSku = adjustmentSku === {{ $sku->id }} && adjustmentMode === 'decrease' ? null : {{ $sku->id }}; adjustmentMode = 'decrease'"
+                                            class="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                                        >
+                                            <x-heroicon-o-arrow-down-tray class="size-4" />
                                         </button>
 
                                         <button
                                             type="button"
                                             title="Xem lịch sử xuất nhập hàng"
-                                                x-on:click="receiveSku = null; activeSku = {{ $sku->id }}; modal = 'history'"
+                                                x-on:click="adjustmentSku = null; activeSku = {{ $sku->id }}; modal = 'history'"
                                             class="flex size-8 items-center justify-center
                                                                rounded-lg border border-slate-200 bg-white
                                                                text-slate-500 transition
@@ -443,7 +441,7 @@
                                         <button
                                             type="button"
                                             title="Xem Order đang được cấp hàng"
-                                                x-on:click="receiveSku = null; activeSku = {{ $sku->id }}; modal = 'orders'"
+                                                x-on:click="adjustmentSku = null; activeSku = {{ $sku->id }}; modal = 'orders'"
                                             class="flex size-8 items-center justify-center
                                                                rounded-lg border border-slate-200 bg-white
                                                                text-slate-500 transition
@@ -463,9 +461,9 @@
 
                             </tr>
 
-                            <tr x-show="receiveSku === {{ $sku->id }}" x-cloak class="bg-slate-50/70">
+                            <tr x-show="adjustmentSku === {{ $sku->id }}" x-cloak class="bg-slate-50/70">
                                 <td colspan="7" class="px-4 py-4">
-                                    <div x-show="receiveSku === {{ $sku->id }}" x-cloak
+                                    <div x-show="adjustmentMode === 'increase'" x-cloak
                                          class="rounded-xl border border-slate-200 bg-white p-4">
                                         <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
                                             <div>
@@ -493,6 +491,32 @@
                                             class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                         @error('adjustmentReason') <p
                                             class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                    </div>
+
+                                    <div x-show="adjustmentMode === 'decrease'" x-cloak
+                                         class="rounded-xl border border-red-200 bg-white p-4">
+                                        <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+                                            <div>
+                                                <label class="mb-1 block text-xs font-semibold text-slate-600">Số lượng giảm</label>
+                                                <input wire:model="decreaseQuantity" type="number" min="1" max="{{ $available }}" step="1"
+                                                       class="fi-input h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-950 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-red-500 focus:ring-1 focus:ring-red-500 lg:w-36"
+                                                       placeholder="500,1000,...">
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <label class="mb-1 block text-xs font-semibold text-slate-600">Lý do giảm tồn</label>
+                                                <input wire:model="decreaseReason" type="text" maxlength="500"
+                                                       class="fi-input h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-950 shadow-sm outline-none transition placeholder:text-gray-400 focus:border-red-500 focus:ring-1 focus:ring-red-500">
+                                            </div>
+                                            <button type="button" wire:click="decreaseInventory({{ $sku->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="decreaseInventory({{ $sku->id }})"
+                                                    @disabled($available === 0)
+                                                    class="h-10 rounded-lg bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">
+                                                Xác nhận giảm
+                                            </button>
+                                        </div>
+                                        @error('decreaseQuantity') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                                        @error('decreaseReason') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                                     </div>
 
                                 </td>

@@ -8,6 +8,7 @@ use App\Models\ManagedFile;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
+use App\Models\Service;
 use App\Models\User;
 use App\Services\AttachmentManager;
 use App\Services\CustomerStockManager;
@@ -15,6 +16,7 @@ use App\Services\InventoryManager;
 use App\Services\OrderActivityLogger;
 use App\Services\OrderCodeService;
 use App\Services\OrderInventoryManager;
+use App\Services\OrderItemServiceManager;
 use App\Services\PaymentManager;
 use App\Services\ShippingManager;
 use App\Services\StockReleaseManager;
@@ -42,6 +44,8 @@ class DemoDataSeeder extends Seeder
         'activity_log',
         'inventory_movements',
         'order_inventory_allocations',
+        'stock_release_item_services',
+        'order_item_services',
         'payment',
         'shipping',
         'stock_release_items',
@@ -50,6 +54,7 @@ class DemoDataSeeder extends Seeder
         'customer_stock',
         'order_item',
         'orders',
+        'services',
         'product_sku',
         'product',
         'customers',
@@ -72,6 +77,7 @@ class DemoDataSeeder extends Seeder
             DB::transaction(function () use ($actor): void {
                 $faker = fake('vi_VN');
                 $faker->seed(20260907);
+                $this->createServices();
                 $products = $this->createProducts($faker, $actor->id);
                 $skus = $this->createSkus($products, $faker);
                 $customers = $this->createCustomers($faker);
@@ -83,6 +89,17 @@ class DemoDataSeeder extends Seeder
         } finally {
             Auth::logout();
         }
+    }
+
+    private function createServices(): void
+    {
+        Service::query()->create([
+            'code' => Service::CUP_PRINTING_CODE,
+            'name' => 'Dịch vụ in ly',
+            'unit_price' => 170000,
+            'product_type' => 'in_ly',
+            'is_active' => true,
+        ]);
     }
 
     /** @return Collection<int, Product> */
@@ -100,7 +117,7 @@ class DemoDataSeeder extends Seeder
 
             return Product::query()->create([
                 'name' => $name,
-                'product_type' => $faker->randomElement(['in_ly', 'in_card', 'in_menu', 'in_hop', 'in_banner']),
+                'product_type' => $faker->randomElement(array_keys(config('product.product_type'))),
                 'unit' => $faker->randomElement(['cái', 'bộ', 'tờ', 'cuốn']),
                 'is_active' => $index <= 18,
                 'note' => "Sản phẩm demo số {$index}, dùng kiểm tra form và modal quản trị.",
@@ -188,6 +205,17 @@ class DemoDataSeeder extends Seeder
                 ]);
             }
 
+            // Dữ liệu demo gắn dịch vụ cho mọi dòng In ly để modal có đủ trường hợp hiển thị.
+            $serviceStates = $order->items()
+                ->with('productSku.product')
+                ->get()
+                ->map(fn ($item): array => [
+                    'product_sku_id' => $item->product_sku_id,
+                    'include_cup_printing_service' => $item->productSku?->product?->product_type === 'in_ly',
+                ])
+                ->all();
+
+            app(OrderItemServiceManager::class)->syncForOrder($order->id, $serviceStates);
             $order->recalculateTotals();
             app(OrderInventoryManager::class)->syncForOrder($order->id, $actorId);
 
@@ -198,6 +226,7 @@ class DemoDataSeeder extends Seeder
                 app(OrderInventoryManager::class)->syncForOrder($order->id, $actorId);
                 $item->decrement('quantity', 1);
                 app(OrderInventoryManager::class)->syncForOrder($order->id, $actorId);
+                app(OrderItemServiceManager::class)->syncForOrder($order->id, $serviceStates);
                 $order->recalculateTotals();
             }
 

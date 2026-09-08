@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Services\AttachmentManager;
 use App\Services\OrderCodeService;
 use App\Services\OrderInventoryManager;
+use App\Services\OrderItemServiceManager;
 use App\Support\StatusApp;
 use Carbon\Carbon;
 use Filament\Resources\Pages\CreateRecord;
@@ -27,6 +28,15 @@ class CreateOrder extends CreateRecord
 
     /** @var array<string, string> */
     private array $stagedAttachmentNames = [];
+
+    /** @var array<int|string, array<string, mixed>> */
+    private array $itemServiceStates = [];
+
+    protected function beforeValidate(): void
+    {
+        // Toggle dịch vụ không lưu vào order_item nên phải chụp raw state trước bước dehydration.
+        $this->itemServiceStates = $this->form->getRawState()['items'] ?? [];
+    }
 
     /**
      * Tạo Order trong cùng transaction với sequence để mã luôn duy nhất khi có hai người thao tác.
@@ -74,6 +84,8 @@ class CreateOrder extends CreateRecord
 
     protected function afterCreate(): void
     {
+        // Dịch vụ được chọn theo từng dòng nên chỉ đồng bộ sau khi Repeater đã tạo Order Item.
+        app(OrderItemServiceManager::class)->syncForOrder($this->record->id, $this->itemServiceStates);
         // Repeater lưu order_item sau Order, nên tổng tiền được chốt lại khi quan hệ đã lưu xong.
         $this->record->recalculateTotals();
         // Filament bao toàn bộ create lifecycle trong transaction nên thiếu tồn sẽ rollback cả Order và Order Item.

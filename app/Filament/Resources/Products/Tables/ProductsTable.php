@@ -15,7 +15,10 @@ class ProductsTable
         return $table
             ->columns([
                 TextColumn::make('name')->label('Tên sản phẩm')->searchable()->sortable(),
-                TextColumn::make('product_type')->label('Loại')->badge(),
+                TextColumn::make('product_type')
+                    ->label('Loại')
+                    ->badge()
+                    ->formatStateUsing(fn (string $state): string => config("product.product_type.{$state}", $state)),
                 TextColumn::make('unit')->label('Đơn vị'),
                 IconColumn::make('is_active')->label('Hoạt động')->boolean(),
             ])

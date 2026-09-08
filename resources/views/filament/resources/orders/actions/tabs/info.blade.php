@@ -1,3 +1,8 @@
+@php
+    $productSubtotal = $order->items->sum(fn ($item): float => (float) $item->subtotal);
+    $serviceSubtotal = $order->items->flatMap->services->sum(fn ($service): float => (float) $service->subtotal);
+@endphp
+
 <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
     <section class="rounded-xl border border-slate-200 bg-white p-5">
         <div class="mb-4 flex items-center justify-between">
@@ -83,8 +88,12 @@
 
         <dl class="space-y-3 text-sm">
             <div class="flex items-center justify-between">
-                <dt class="text-slate-500">Tạm tính</dt>
-                <dd class="font-medium text-slate-800">{{ number_format((float) $order->subtotal, 0, ',', '.') }}đ</dd>
+                <dt class="text-slate-500">Tiền sản phẩm</dt>
+                <dd class="font-medium text-slate-800">{{ number_format($productSubtotal, 0, ',', '.') }}đ</dd>
+            </div>
+            <div class="flex items-center justify-between">
+                <dt class="text-slate-500">Tiền dịch vụ</dt>
+                <dd class="font-medium text-slate-800">{{ number_format($serviceSubtotal, 0, ',', '.') }}đ</dd>
             </div>
             <div class="flex items-center justify-between">
                 <dt class="text-slate-500">Giảm giá</dt>

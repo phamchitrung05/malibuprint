@@ -11,7 +11,7 @@
     };
 @endphp
 
-<div class="space-y-4 text-left order-view-modal min-h-0 flex-1 max-h-[80vh] overflow-y-auto bg-slate-50/60 p-5">
+<div class="space-y-4 text-left order-view-modal min-h-0 flex-1 max-h-[70vh] overflow-y-auto bg-slate-50/60 p-5">
     <section class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -47,12 +47,16 @@
                     <div class="flex flex-col items-center">
                         <div @class([
                             'z-10 flex size-8 items-center justify-center rounded-full ring-4 ring-white',
-                            ($stage['progress_class'] ?? 'bg-slate-400').' text-white' => $isReached,
-                            'bg-white text-slate-400 ring-slate-100' => ! $isReached,
+                            ($stage['progress_class'] ?? 'bg-slate-400').' text-white',
+                            'opacity-40' => ! $isReached,
                         ])>
                             @if ($isReached)<x-heroicon-s-check class="size-4"/>@else<span class="size-2 rounded-full bg-current"></span>@endif
                         </div>
-                        <span class="mt-2 text-xs font-semibold {{ $isReached ? ($stage['label_classes'] ?? 'text-slate-700') : 'text-slate-400' }}">{{ $stage['label'] }}</span>
+                        <span @class([
+                            'mt-2 text-xs font-semibold',
+                            $stage['label_classes'] ?? 'text-slate-700',
+                            'opacity-40' => ! $isReached,
+                        ])>{{ $stage['label'] }}</span>
                     </div>
                 @endforeach
             </div>

@@ -52,7 +52,7 @@ class StockReleaseManager
             $stockItems = CustomerStockItem::query()
                 ->where('customer_stock_id', $customerStock->id)
                 ->whereIn('id', $requestedQuantities->keys())
-                ->with('orderItem')
+                ->with('orderItem.services')
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('id');
@@ -63,7 +63,8 @@ class StockReleaseManager
                 ]);
             }
 
-            $grossAmounts = [];
+            $grossProductAmounts = [];
+            $serviceSnapshotsByItem = [];
 
             foreach ($requestedQuantities as $itemId => $quantity) {
                 $stockItem = $stockItems->get($itemId);
@@ -74,54 +75,57 @@ class StockReleaseManager
                     ]);
                 }
 
-                $grossAmounts[$itemId] = $quantity * (float) $stockItem->orderItem->unit_price;
+                $grossProductAmounts[$itemId] = $quantity * (float) $stockItem->orderItem->unit_price;
+                // Mỗi dịch vụ của Order Item được phân bổ theo đúng quantity sản phẩm xuất trong đợt này.
+                $serviceSnapshotsByItem[$itemId] = $stockItem->orderItem->services
+                    ->map(fn ($service): array => [
+                        'order_item_service_id' => $service->id,
+                        'service_name' => $service->service_name,
+                        'quantity' => $quantity,
+                        'unit_price' => (float) $service->unit_price,
+                        'subtotal' => round($quantity * (float) $service->unit_price, 2),
+                    ])
+                    ->all();
             }
 
             $isFinalRelease = $this->isFinalRelease($customerStock->id, $requestedQuantities);
-            [$productAmount, $allocatedShippingFee] = $this->calculateReleaseAmounts(
+            $grossProductAmount = array_sum($grossProductAmounts);
+            $grossServiceAmount = collect($serviceSnapshotsByItem)->flatten(1)->sum('subtotal');
+            [$allocatedDiscount, $allocatedShippingFee, $reconciliationAdjustment, $releaseTotal] = $this->calculateReleaseAmounts(
                 $order,
-                array_sum($grossAmounts),
+                $grossProductAmount + $grossServiceAmount,
                 $customerStock,
                 $isFinalRelease,
             );
-            $releaseTotal = $productAmount + $allocatedShippingFee;
             $release = $customerStock->releases()->create([
                 'uuid' => (string) Str::uuid(),
                 'release_code' => $this->nextReleaseCode($order, $customerStock),
                 'released_at' => now(),
+                'gross_product_amount' => $grossProductAmount,
+                'gross_service_amount' => $grossServiceAmount,
+                'allocated_discount' => $allocatedDiscount,
+                'reconciliation_adjustment' => $reconciliationAdjustment,
                 'total_amount' => $releaseTotal,
                 'allocated_shipping_fee' => $allocatedShippingFee,
                 'note' => filled($note) ? $note : null,
                 'created_by' => $actorId,
             ]);
 
-            // Dòng sản phẩm không chứa phí giao hàng; phí được giữ riêng trên chứng từ để dễ đối soát.
-            $productAmountInCents = (int) round($productAmount * 100);
-            $allocatedCents = 0;
-            $lastItemId = $requestedQuantities->keys()->last();
-            $grossReleaseTotal = array_sum($grossAmounts);
-
             foreach ($requestedQuantities as $itemId => $quantity) {
                 $stockItem = $stockItems->get($itemId);
-                // Tính bằng đơn vị nhỏ nhất và chặn theo số dư để không sinh dòng âm do làm tròn nhiều sản phẩm.
-                $remainingCents = max(0, $productAmountInCents - $allocatedCents);
-                $lineCents = $itemId === $lastItemId
-                    ? $remainingCents
-                    : min(
-                        $remainingCents,
-                        (int) round($productAmountInCents * ($grossAmounts[$itemId] / max($grossReleaseTotal, 1))),
-                    );
-                $lineAmount = $lineCents / 100;
-
-                $release->items()->create([
+                // amount của dòng chỉ giữ gross sản phẩm; dịch vụ, discount và shipping có snapshot riêng.
+                $releaseItem = $release->items()->create([
                     'customer_stock_item_id' => $stockItem->id,
                     'quantity' => $quantity,
                     'unit_price' => $stockItem->orderItem->unit_price,
-                    'amount' => $lineAmount,
+                    'amount' => $grossProductAmounts[$itemId],
                 ]);
 
+                foreach ($serviceSnapshotsByItem[$itemId] as $serviceSnapshot) {
+                    $releaseItem->services()->create($serviceSnapshot);
+                }
+
                 $stockItem->increment('released_quantity', $quantity);
-                $allocatedCents += $lineCents;
             }
 
             $order->forceFill([
@@ -137,6 +141,8 @@ class StockReleaseManager
                 'release_code' => $release->release_code,
                 'total_quantity' => $requestedQuantities->sum(),
                 'total_amount' => $release->total_amount,
+                'gross_service_amount' => $release->gross_service_amount,
+                'allocated_discount' => $release->allocated_discount,
                 'allocated_shipping_fee' => $release->allocated_shipping_fee,
             ]);
 
@@ -149,7 +155,7 @@ class StockReleaseManager
                 'confirmed_by' => $actorId,
             ]);
 
-            return $release->load(['items.customerStockItem.orderItem.productSku.product', 'shipping']);
+            return $release->load(['items.customerStockItem.orderItem.productSku.product', 'items.services', 'shipping']);
         });
     }
 
@@ -179,37 +185,49 @@ class StockReleaseManager
             });
     }
 
-    /** @return array{0: float, 1: float} */
+    /** @return array{0: float, 1: float, 2: float, 3: float} */
     private function calculateReleaseAmounts(
         Order $order,
         float $grossReleaseAmount,
         CustomerStock $customerStock,
         bool $isFinalRelease,
     ): array {
-        $orderProductAmount = max(0, (float) $order->total_amount - (float) $order->shipping_fee);
-        $previousProductAmount = (float) $customerStock->releases()
-            // Quan hệ mặc định sắp xếp mới nhất; aggregate MySQL phải bỏ ORDER BY không cần thiết.
-            ->reorder()
-            ->selectRaw('COALESCE(SUM(total_amount - allocated_shipping_fee), 0) as total')
-            ->value('total');
+        $previousReleaseTotal = (float) $customerStock->releases()->reorder()->sum('total_amount');
+        $previousDiscount = (float) $customerStock->releases()->reorder()->sum('allocated_discount');
         $previousShippingFee = (float) $customerStock->releases()->sum('allocated_shipping_fee');
-        $remainingProductAmount = max(0, $orderProductAmount - $previousProductAmount);
+        $remainingDiscount = max(0, (float) $order->discount - $previousDiscount);
         $remainingShippingFee = max(0, (float) $order->shipping_fee - $previousShippingFee);
 
         if ($isFinalRelease) {
-            return [round($remainingProductAmount, 2), round($remainingShippingFee, 2)];
+            $allocatedDiscount = round($remainingDiscount, 2);
+            $allocatedShippingFee = round($remainingShippingFee, 2);
+            $remainingOrderAmount = round(max(0, (float) $order->total_amount - $previousReleaseTotal), 2);
+            $calculatedAmount = round($grossReleaseAmount - $allocatedDiscount + $allocatedShippingFee, 2);
+
+            // Phiếu cuối đối chiếu với tổng Order để hấp thụ sai số làm tròn hoặc dữ liệu legacy đã thu trước đó.
+            return [
+                $allocatedDiscount,
+                $allocatedShippingFee,
+                round($remainingOrderAmount - $calculatedAmount, 2),
+                $remainingOrderAmount,
+            ];
         }
 
         if ((float) $order->subtotal <= 0) {
-            return [0.0, 0.0];
+            return [0.0, 0.0, 0.0, 0.0];
         }
 
-        // Cả giảm giá và phí giao hàng được phân bổ theo tỷ lệ giá trị gốc của đợt xuất.
+        // Cả giảm giá và phí giao hàng được phân bổ theo gross sản phẩm cộng dịch vụ của đợt xuất.
         $ratio = $grossReleaseAmount / (float) $order->subtotal;
+        $allocatedDiscount = round(min($remainingDiscount, (float) $order->discount * $ratio), 2);
+        $allocatedShippingFee = round(min($remainingShippingFee, (float) $order->shipping_fee * $ratio), 2);
+        $releaseTotal = round(max(0, $grossReleaseAmount - $allocatedDiscount + $allocatedShippingFee), 2);
 
         return [
-            round(min($remainingProductAmount, $orderProductAmount * $ratio), 2),
-            round(min($remainingShippingFee, (float) $order->shipping_fee * $ratio), 2),
+            $allocatedDiscount,
+            $allocatedShippingFee,
+            0.0,
+            $releaseTotal,
         ];
     }
 

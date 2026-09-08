@@ -53,6 +53,7 @@ class CustomerStockReleaseHistory extends Component
                 ->with([
                     'releases.payment.confirmer',
                     'releases.items.customerStockItem.orderItem.productSku.product',
+                    'releases.items.services',
                 ])
                 ->findOrFail($this->customerStockId),
         ]);

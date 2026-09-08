@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\Orders\Pages\ListOrders;
 use App\Livewire\UpdateOrderStatus;
 use App\Models\Customer;
 use App\Models\Order;
@@ -178,6 +179,48 @@ class OrderWorkflowTest extends TestCase
         $this->assertSame('50000.00', $order->discount);
         $this->assertSame('30000.00', $order->shipping_fee);
         $this->assertSame('280000.00', $order->total_amount);
+    }
+
+    public function test_order_table_prioritizes_status_and_nearest_delivery_date(): void
+    {
+        $this->travelTo('2026-09-08 09:00:00');
+
+        $user = User::factory()->create();
+        $pendingFar = $this->createOrder($user);
+        $pendingFar->forceFill(['delivery_date' => today()->addDays(5)])->saveQuietly();
+        $pendingNear = $this->createOrder($user);
+        $pendingNear->forceFill(['delivery_date' => today()->addDay()])->saveQuietly();
+        $processingFar = $this->createOrder($user);
+        $processingFar->forceFill([
+            'status' => 'processing',
+            'delivery_date' => today()->subDays(4),
+        ])->saveQuietly();
+        $processingNear = $this->createOrder($user);
+        $processingNear->forceFill([
+            'status' => 'processing',
+            'delivery_date' => today()->addDays(2),
+        ])->saveQuietly();
+        $completed = $this->createOrder($user);
+        $completed->forceFill([
+            'status' => 'completed',
+            'delivery_date' => today()->addDays(10),
+        ])->saveQuietly();
+        $cancelled = $this->createOrder($user);
+        $cancelled->forceFill(['status' => 'cancelled'])->saveQuietly();
+
+        Livewire::actingAs($user)
+            ->test(ListOrders::class)
+            ->assertCanSeeTableRecords([
+                $pendingNear,
+                $processingNear,
+                $processingFar,
+                $pendingFar,
+                $completed,
+                $cancelled,
+            ], inOrder: true)
+            ->assertSee('Còn 1 ngày')
+            ->assertSee('Trễ 4 ngày')
+            ->assertDontSee('Còn 10 ngày');
     }
 
     private function createOrder(User $user): Order

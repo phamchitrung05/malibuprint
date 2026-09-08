@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\InventoryManager;
 use App\Services\OrderInventoryManager;
 use App\Support\StatusApp;
+use Filament\Forms\Components\Select;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -65,6 +66,75 @@ class InventoryWorkflowTest extends TestCase
 
         $this->assertSame(38, $sku->refresh()->stock);
         $this->assertSame(12, $order->inventoryAllocations()->sole()->quantity);
+    }
+
+    public function test_order_form_selects_first_available_sku_and_hides_products_without_remaining_skus(): void
+    {
+        $user = User::factory()->create();
+        $product = Product::query()->create(['name' => 'Sản phẩm nhiều SKU', 'unit' => 'cái']);
+        $unavailableProduct = Product::query()->create(['name' => 'Sản phẩm hết hàng', 'unit' => 'cái']);
+
+        $outOfStockSku = ProductSku::query()->create([
+            'product_id' => $product->id,
+            'sku_code' => 'SKU-01-HET-HANG',
+            'price' => 5000,
+            'stock' => 0,
+            'status' => StatusApp::value('product_sku.status', 'active'),
+        ]);
+        $firstAvailableSku = ProductSku::query()->create([
+            'product_id' => $product->id,
+            'sku_code' => 'SKU-02-CON-HANG',
+            'price' => 10000,
+            'stock' => 5,
+            'status' => StatusApp::value('product_sku.status', 'active'),
+        ]);
+        $secondAvailableSku = ProductSku::query()->create([
+            'product_id' => $product->id,
+            'sku_code' => 'SKU-03-CON-HANG',
+            'price' => 20000,
+            'stock' => 8,
+            'status' => StatusApp::value('product_sku.status', 'active'),
+        ]);
+        ProductSku::query()->create([
+            'product_id' => $unavailableProduct->id,
+            'sku_code' => 'SKU-SP-HET-HANG',
+            'price' => 30000,
+            'stock' => 0,
+            'status' => StatusApp::value('product_sku.status', 'active'),
+        ]);
+
+        $component = Livewire::actingAs($user)->test(CreateOrder::class);
+        $firstItemKey = array_key_first($component->get('data.items'));
+
+        $component
+            ->set("data.items.{$firstItemKey}.product_id", $product->id)
+            ->assertSet("data.items.{$firstItemKey}.product_sku_id", $firstAvailableSku->id)
+            ->assertSet("data.items.{$firstItemKey}.unit_price", 10000.0)
+            ->callFormComponentAction('items', 'add');
+
+        $secondItemKey = array_key_last($component->get('data.items'));
+        $component
+            ->set("data.items.{$secondItemKey}.product_id", $product->id)
+            ->assertSet("data.items.{$secondItemKey}.product_sku_id", $secondAvailableSku->id)
+            ->assertSet("data.items.{$secondItemKey}.unit_price", 20000.0)
+            ->callFormComponentAction('items', 'add');
+
+        $thirdItemKey = array_key_last($component->get('data.items'));
+        $component
+            ->assertFormFieldExists(
+                "items.{$firstItemKey}.product_sku_id",
+                checkFieldUsing: function (Select $field) use ($outOfStockSku): bool {
+                    $options = $field->getOptions();
+
+                    return ($options[$outOfStockSku->id] ?? null) === 'SKU-01-HET-HANG (Hết hàng)'
+                        && $field->isOptionDisabled($outOfStockSku->id, $options[$outOfStockSku->id]);
+                },
+            )
+            ->assertFormFieldExists(
+                "items.{$thirdItemKey}.product_id",
+                checkFieldUsing: fn (Select $field): bool => ! array_key_exists($product->id, $field->getOptions())
+                    && ! array_key_exists($unavailableProduct->id, $field->getOptions()),
+            );
     }
 
     public function test_filament_does_not_persist_order_when_inventory_is_insufficient(): void
@@ -261,6 +331,27 @@ class InventoryWorkflowTest extends TestCase
             'balance_before' => 100,
             'balance_after' => 5100,
             'reason' => 'Nhập bổ sung từ nhà cung cấp',
+        ]);
+    }
+
+    public function test_product_inventory_decrease_action_reduces_stock_and_records_movement(): void
+    {
+        [$user, , $sku] = $this->createSingleSkuOrder();
+
+        Livewire::actingAs($user)
+            ->test(ProductInventory::class)
+            ->set('decreaseQuantity', 25)
+            ->set('decreaseReason', 'Xuất hủy hàng lỗi')
+            ->call('decreaseInventory', $sku->id)
+            ->assertHasNoErrors();
+
+        $this->assertSame(75, $sku->refresh()->stock);
+        $this->assertDatabaseHas('inventory_movements', [
+            'product_sku_id' => $sku->id,
+            'quantity' => -25,
+            'balance_before' => 100,
+            'balance_after' => 75,
+            'reason' => 'Xuất hủy hàng lỗi',
         ]);
     }
 

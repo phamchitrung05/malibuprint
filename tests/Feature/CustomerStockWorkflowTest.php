@@ -14,6 +14,7 @@ use App\Models\Product;
 use App\Models\ProductSku;
 use App\Models\User;
 use App\Services\CustomerStockManager;
+use App\Services\OrderItemServiceManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -80,6 +81,79 @@ class CustomerStockWorkflowTest extends TestCase
         );
     }
 
+    public function test_customer_stock_releases_allocate_service_by_released_quantity(): void
+    {
+        [$user, $order] = $this->createCustomerStockOrder(10, 100000);
+        $orderItem = $order->items()->sole();
+
+        app(OrderItemServiceManager::class)->syncForOrder($order->id, [[
+            'product_sku_id' => $orderItem->product_sku_id,
+            'include_cup_printing_service' => true,
+        ]]);
+        $order->forceFill(['discount' => 180000])->saveQuietly();
+        $order->recalculateTotals();
+
+        Livewire::actingAs($user)
+            ->test(UpdateOrderStatus::class, ['orderId' => $order->id])
+            ->call('startProcessing')
+            ->call('completeProduction');
+
+        $stock = CustomerStock::query()->where('order_id', $order->id)->firstOrFail();
+        $stockItem = $stock->items()->sole();
+
+        Livewire::actingAs($user)
+            ->test(ReleaseCustomerStock::class, ['customerStockId' => $stock->id])
+            ->assertViewHas('totalServiceValue', 1700000.0)
+            ->set("quantities.{$stockItem->id}", 3)
+            ->call('release')
+            ->assertHasNoErrors();
+
+        $firstRelease = $stock->releases()->oldest('id')->firstOrFail();
+        $firstReleaseItem = $firstRelease->items()->sole();
+        $firstService = $firstReleaseItem->services()->sole();
+
+        $this->assertSame('30000.00', $firstRelease->gross_product_amount);
+        $this->assertSame('510000.00', $firstRelease->gross_service_amount);
+        $this->assertSame('54000.00', $firstRelease->allocated_discount);
+        $this->assertSame('30000.00', $firstRelease->allocated_shipping_fee);
+        $this->assertSame('0.00', $firstRelease->reconciliation_adjustment);
+        $this->assertSame('516000.00', $firstRelease->total_amount);
+        $this->assertSame('30000.00', $firstReleaseItem->amount);
+        $this->assertSame(3, $firstService->quantity);
+        $this->assertSame('170000.00', $firstService->unit_price);
+        $this->assertSame('510000.00', $firstService->subtotal);
+
+        Livewire::actingAs($user)
+            ->test(ReleaseCustomerStock::class, ['customerStockId' => $stock->id])
+            ->assertViewHas('remainingStockValue', 70000.0)
+            ->set("quantities.{$stockItem->id}", 7)
+            ->assertViewHas('releaseProductPreview', 70000.0)
+            ->assertViewHas('releaseServicePreview', 1190000.0)
+            ->call('release')
+            ->assertHasNoErrors();
+
+        $secondRelease = $stock->releases()->latest('id')->firstOrFail();
+
+        $this->assertSame('70000.00', $secondRelease->gross_product_amount);
+        $this->assertSame('1190000.00', $secondRelease->gross_service_amount);
+        $this->assertSame('126000.00', $secondRelease->allocated_discount);
+        $this->assertSame('70000.00', $secondRelease->allocated_shipping_fee);
+        $this->assertSame('0.00', $secondRelease->reconciliation_adjustment);
+        $this->assertSame('1204000.00', $secondRelease->total_amount);
+        $this->assertSame('1720000.00', $order->refresh()->total_amount);
+        $this->assertSame(1720000.0, (float) $stock->releases()->sum('total_amount'));
+        $this->assertDatabaseCount('stock_release_item_services', 2);
+
+        Livewire::actingAs($user)
+            ->test(CustomerStockReleaseHistory::class, ['customerStockId' => $stock->id])
+            ->call('confirmPayment', $firstRelease->id)
+            ->call('confirmPayment', $secondRelease->id)
+            ->assertHasNoErrors();
+
+        $this->assertSame(1720000.0, (float) $order->payments()->sum('amount'));
+        $this->assertTrue($order->refresh()->is_paid);
+    }
+
     public function test_customer_stock_order_cannot_use_single_delivery_payment_actions(): void
     {
         [$user, $order] = $this->completedCustomerStockOrder(100);
@@ -127,8 +201,13 @@ class CustomerStockWorkflowTest extends TestCase
 
         $release = $stock->releases()->firstOrFail();
 
+        $this->actingAs($user)
+            ->get(route('stock-releases.receipt.print', $release))
+            ->assertNotFound();
+
         Livewire::actingAs($user)
             ->test(CustomerStockReleaseHistory::class, ['customerStockId' => $stock->id])
+            ->assertSee('Xác nhận')
             ->call('confirmPayment', $release->id)
             ->assertHasNoErrors();
 
@@ -140,6 +219,16 @@ class CustomerStockWorkflowTest extends TestCase
             'confirmed_by' => $user->id,
         ]);
         $this->assertFalse($order->refresh()->is_paid);
+
+        $this->get(route('stock-releases.receipt.print', $release))
+            ->assertOk()
+            ->assertSee('PHIẾU THU')
+            ->assertSee('100.000đ')
+            ->assertSee('In phiếu thu');
+
+        Livewire::actingAs($user)
+            ->test(CustomerStockReleaseHistory::class, ['customerStockId' => $stock->id])
+            ->assertSee('In phiếu thu');
 
         Livewire::actingAs($user)
             ->test(CustomerStockReleaseHistory::class, ['customerStockId' => $stock->id])

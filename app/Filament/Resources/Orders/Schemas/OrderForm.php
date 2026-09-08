@@ -5,8 +5,10 @@ namespace App\Filament\Resources\Orders\Schemas;
 use App\Enums\FulfillmentMode;
 use App\Models\Customer;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductSku;
+use App\Models\Service;
 use App\Support\StatusApp;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -17,6 +19,7 @@ use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -25,6 +28,7 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\View;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
@@ -224,28 +228,26 @@ class OrderForm
                                 ->table([
                                     TableColumn::make('Sản phẩm')
                                         ->markAsRequired()
-                                        ->width('25%'),
+                                        ->width('22%'),
                                     TableColumn::make('SKU')
                                         ->markAsRequired()
-                                        ->width('20%'),
+                                        ->width('17%'),
                                     TableColumn::make('Đơn giá')
                                         ->markAsRequired()
-                                        ->width('20%'),
+                                        ->width('16%'),
                                     TableColumn::make('Số lượng')
                                         ->markAsRequired()
-                                        ->width('15%'),
-                                    TableColumn::make('Thành tiền')
+                                        ->width('12%'),
+                                    TableColumn::make('Dịch vụ in ly')
+                                        ->width('16%'),
+                                    TableColumn::make('Tiền sản phẩm')
                                         ->markAsRequired()
-                                        ->width('20%'),
+                                        ->width('17%'),
                                 ])
                                 ->schema([
                                     Select::make('product_id')
                                         ->label('Sản phẩm')
-                                        ->options(fn (): array => Product::query()
-                                            ->where('is_active', true)
-                                            ->orderBy('name')
-                                            ->pluck('name', 'id')
-                                            ->all())
+                                        ->options(fn (Get $get): array => self::availableProductOptions($get))
                                         ->searchable()
                                         ->preload()
                                         ->required()
@@ -257,23 +259,26 @@ class OrderForm
                                                 $set('product_id', ProductSku::query()->find($get('product_sku_id'))?->product_id);
                                             }
                                         })
-                                        ->afterStateUpdated(function (Set $set, Get $get): void {
-                                            $set('product_sku_id', null);
-                                            $set('unit_price', 0);
-                                            $set('subtotal', 0);
+                                        ->afterStateUpdated(function ($state, Set $set, Get $get): void {
+                                            $currentSkuId = filled($get('product_sku_id')) ? (int) $get('product_sku_id') : null;
+                                            $sku = filled($state)
+                                                ? self::availableSkuQuery((int) $state, self::selectedSkuIds($get, $currentSkuId))->first()
+                                                : null;
+                                            $price = (float) ($sku?->price ?? 0);
+
+                                            // Chọn ngay SKU còn hàng đầu tiên để dòng sản phẩm sẵn sàng nhập số lượng.
+                                            $set('include_cup_printing_service', false);
+                                            $set('cup_printing_service_unit_price', self::cupPrintingService()?->unit_price ?? 0);
+                                            $set('product_sku_id', $sku?->getKey());
+                                            $set('unit_price', $price);
+                                            $set('subtotal', $price * max(1, (int) $get('quantity')));
                                             self::updateTotals($get, $set);
                                         }),
                                     Select::make('product_sku_id')
                                         ->label('SKU')
-                                        ->options(fn (Get $get): array => ProductSku::query()
-                                            ->where('product_id', $get('product_id'))
-                                            ->where('status', StatusApp::value('product_sku.status', 'active'))
-                                            ->orderBy('sku_code')
-                                            ->get(['id', 'sku_code', 'stock'])
-                                            ->mapWithKeys(fn (ProductSku $sku): array => [
-                                                $sku->id => sprintf('%s (Khả dụng thêm: %s)', $sku->sku_code, number_format($sku->stock)),
-                                            ])
-                                            ->all())
+                                        ->options(fn (Get $get): array => self::availableSkuOptions($get))
+                                        ->disableOptionWhen(fn ($value, $label, Get $get): bool => str_contains((string) $label, '(Hết hàng)')
+                                            && (int) $value !== (int) $get('product_sku_id'))
                                         ->searchable()
                                         ->preload()
                                         ->disabled(fn (Get $get): bool => blank($get('product_id')))
@@ -310,8 +315,36 @@ class OrderForm
                                             $set('subtotal', (float) $get('unit_price') * max(1, (int) $get('quantity')));
                                             self::updateTotals($get, $set);
                                         }),
+                                    Hidden::make('cup_printing_service_unit_price')
+                                        ->default(fn (): float => (float) (self::cupPrintingService()?->unit_price ?? 0))
+                                        // Giá này chỉ phục vụ tính realtime; manager luôn tự lấy giá snapshot hoặc catalog.
+                                        ->dehydrated(false),
+                                    Toggle::make('include_cup_printing_service')
+                                        ->label('Kèm dịch vụ')
+                                        ->default(false)
+                                        ->live()
+                                        // Toggle chỉ điều khiển bảng snapshot, không phải cột của order_item.
+                                        ->dehydrated(false)
+                                        ->visible(fn (Get $get): bool => self::supportsCupPrintingService($get))
+                                        ->afterStateHydrated(function (?OrderItem $record, Set $set): void {
+                                            if ($record === null) {
+                                                return;
+                                            }
+
+                                            $snapshot = $record->services()
+                                                ->whereHas('service', fn (Builder $query): Builder => $query
+                                                    ->where('code', Service::CUP_PRINTING_CODE))
+                                                ->first();
+
+                                            $set('include_cup_printing_service', $snapshot !== null);
+                                            $set(
+                                                'cup_printing_service_unit_price',
+                                                $snapshot?->unit_price ?? self::cupPrintingService()?->unit_price ?? 0,
+                                            );
+                                        })
+                                        ->afterStateUpdated(fn (Get $get, Set $set) => self::updateTotals($get, $set)),
                                     TextInput::make('subtotal')
-                                        ->label('Thành tiền')
+                                        ->label('Tiền sản phẩm')
                                         ->numeric()
                                         ->default(0)
                                         ->suffix('đ')
@@ -334,8 +367,15 @@ class OrderForm
                             Placeholder::make('static_subtotal')
                                 ->hiddenLabel()
                                 ->content(fn (Get $get): HtmlString => new HtmlString(sprintf(
-                                    '<div class="flex items-center justify-between gap-4 text-sm"><span class="text-gray-500 dark:text-gray-400">Tạm tính</span><span class="font-medium text-gray-950 dark:text-white">%sđ</span></div>',
-                                    number_format(self::calculateSubtotal($get('items') ?? []), 0, ',', '.'),
+                                    '<div class="flex items-center justify-between gap-4 text-sm"><span class="text-gray-500 dark:text-gray-400">Tiền sản phẩm</span><span class="font-medium text-gray-950 dark:text-white">%sđ</span></div>',
+                                    number_format(self::calculateProductSubtotal($get('items') ?? []), 0, ',', '.'),
+                                ))),
+                            Placeholder::make('static_service_subtotal')
+                                ->hiddenLabel()
+                                ->content(fn (Get $get): HtmlString => new HtmlString(sprintf(
+                                    '<div class="flex items-center justify-between gap-4 text-sm"><span class="text-gray-500 dark:text-gray-400">%s</span><span class="font-medium text-gray-950 dark:text-white">%sđ</span></div>',
+                                    e(self::cupPrintingServiceSummary($get('items') ?? [])),
+                                    number_format(self::calculateServiceSubtotal($get('items') ?? []), 0, ',', '.'),
                                 ))),
                             Grid::make([
                                 'default' => 1,
@@ -405,22 +445,184 @@ class OrderForm
 
     private static function updateTotals(Get $get, Set $set): void
     {
-        $items = $get('items', isAbsolute: true) ?? [];
+        // Callback có thể chạy từ field lồng trong Repeater nên dùng state path tuyệt đối của Resource form.
+        $items = $get('data.items', isAbsolute: true) ?? [];
         $subtotal = self::calculateSubtotal($items);
-        $discount = max(0, (float) ($get('discount', isAbsolute: true) ?? 0));
-        $shippingFee = max(0, (float) ($get('shipping_fee', isAbsolute: true) ?? 0));
+        $discount = max(0, (float) ($get('data.discount', isAbsolute: true) ?? 0));
+        $shippingFee = max(0, (float) ($get('data.shipping_fee', isAbsolute: true) ?? 0));
         $total = max(0, $subtotal - $discount + $shippingFee);
 
-        $set('subtotal', round($subtotal, 2), isAbsolute: true);
-        $set('total_amount', round($total, 2), isAbsolute: true);
+        $set('data.subtotal', round($subtotal, 2), isAbsolute: true);
+        $set('data.total_amount', round($total, 2), isAbsolute: true);
+    }
+
+    /** @return array<int, string> */
+    private static function availableProductOptions(Get $get): array
+    {
+        $currentSkuId = filled($get('product_sku_id')) ? (int) $get('product_sku_id') : null;
+        $selectedSkuIds = self::selectedSkuIds($get, $currentSkuId);
+
+        return Product::query()
+            ->where('is_active', true)
+            ->where(function (Builder $query) use ($currentSkuId, $selectedSkuIds): void {
+                $query->whereHas('skus', fn (Builder $query): Builder => self::availableSkuConstraints($query, $selectedSkuIds));
+
+                // Khi sửa Order, giữ Product của SKU hiện tại dù phần tồn khả dụng đã được cấp hết.
+                if ($currentSkuId !== null) {
+                    $query->orWhereHas('skus', fn (Builder $query): Builder => $query->whereKey($currentSkuId));
+                }
+            })
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    /** @return array<int, string> */
+    private static function availableSkuOptions(Get $get): array
+    {
+        if (blank($get('product_id'))) {
+            return [];
+        }
+
+        $currentSkuId = filled($get('product_sku_id')) ? (int) $get('product_sku_id') : null;
+        $selectedSkuIds = self::selectedSkuIds($get, $currentSkuId);
+        $query = ProductSku::query()
+            ->where('product_id', $get('product_id'))
+            ->where(function (Builder $query) use ($currentSkuId): void {
+                $query->where('status', StatusApp::value('product_sku.status', 'active'));
+
+                // SKU hiện tại của Order sửa được giữ lại kể cả khi SKU đã ngừng hoạt động.
+                if ($currentSkuId !== null) {
+                    $query->orWhere('id', $currentSkuId);
+                }
+            })
+            ->when($selectedSkuIds !== [], fn (Builder $query): Builder => $query->whereNotIn('id', $selectedSkuIds));
+
+        return $query
+            ->orderBy('sku_code')
+            ->get(['id', 'sku_code', 'stock'])
+            ->mapWithKeys(fn (ProductSku $sku): array => [
+                $sku->id => $sku->stock > 0
+                    ? sprintf('%s (Khả dụng thêm: %s)', $sku->sku_code, number_format($sku->stock))
+                    : sprintf('%s (Hết hàng)', $sku->sku_code),
+            ])
+            ->all();
+    }
+
+    /** @param list<int> $selectedSkuIds */
+    private static function availableSkuQuery(int $productId, array $selectedSkuIds): Builder
+    {
+        return self::availableSkuConstraints(ProductSku::query(), $selectedSkuIds)
+            ->where('product_id', $productId)
+            ->orderBy('sku_code');
+    }
+
+    /** @param list<int> $selectedSkuIds */
+    private static function availableSkuConstraints(Builder $query, array $selectedSkuIds): Builder
+    {
+        return $query
+            ->where('status', StatusApp::value('product_sku.status', 'active'))
+            ->where('stock', '>', 0)
+            ->when($selectedSkuIds !== [], fn (Builder $query): Builder => $query->whereNotIn('id', $selectedSkuIds));
+    }
+
+    /** @return list<int> */
+    private static function selectedSkuIds(Get $get, ?int $currentSkuId): array
+    {
+        // Từ field trong một dòng repeater, đi lên state của form rồi đọc toàn bộ items.
+        return collect($get('../../items') ?? [])
+            ->pluck('product_sku_id')
+            ->filter()
+            ->map(fn ($skuId): int => (int) $skuId)
+            ->reject(fn (int $skuId): bool => $skuId === $currentSkuId)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /** @param array<int|string, array<string, mixed>> $items */
     private static function calculateSubtotal(array $items): float
     {
+        return self::calculateProductSubtotal($items) + self::calculateServiceSubtotal($items);
+    }
+
+    /** @param array<int|string, array<string, mixed>> $items */
+    private static function calculateProductSubtotal(array $items): float
+    {
         return collect($items)->sum(
             fn (array $item): float => (float) ($item['unit_price'] ?? 0) * max(1, (int) ($item['quantity'] ?? 1)),
         );
+    }
+
+    /** @param array<int|string, array<string, mixed>> $items */
+    private static function calculateServiceSubtotal(array $items): float
+    {
+        $defaultServicePrice = (float) (self::cupPrintingService()?->unit_price ?? 0);
+
+        return collect($items)->sum(fn (array $item): float => ($item['include_cup_printing_service'] ?? false)
+            ? (float) ($item['cup_printing_service_unit_price'] ?? $defaultServicePrice)
+                * max(1, (int) ($item['quantity'] ?? 1))
+            : 0);
+    }
+
+    private static function supportsCupPrintingService(Get $get): bool
+    {
+        if (blank($get('product_id'))) {
+            return false;
+        }
+
+        $service = self::cupPrintingService();
+
+        return $service !== null
+            && Product::query()->whereKey($get('product_id'))->value('product_type') === $service->product_type;
+    }
+
+    /** @param array<int|string, array<string, mixed>> $items */
+    private static function cupPrintingServiceSummary(array $items): string
+    {
+        $service = self::cupPrintingService();
+        $selectedItems = collect($items)
+            ->filter(fn (array $item): bool => (bool) ($item['include_cup_printing_service'] ?? false))
+            ->values();
+        $selectedCount = $selectedItems->count();
+        $quantities = $selectedItems
+            ->map(fn (array $item): int => max(1, (int) ($item['quantity'] ?? 1)))
+            ->values();
+
+        if ($service === null) {
+            return 'Tiền dịch vụ';
+        }
+
+        $prices = $selectedItems
+            ->map(fn (array $item): float => (float) ($item['cup_printing_service_unit_price'] ?? $service->unit_price))
+            ->unique()
+            ->values();
+
+        if ($prices->isEmpty()) {
+            $prices->push((float) $service->unit_price);
+        }
+
+        if ($prices->count() !== 1) {
+            return sprintf(
+                'Tiền dịch vụ (%s lượt, tổng SL %s)',
+                number_format($selectedCount, 0, ',', '.'),
+                number_format($quantities->sum(), 0, ',', '.'),
+            );
+        }
+
+        return sprintf(
+            'Tiền dịch vụ (%sđ × (%s))',
+            number_format((float) $prices->first(), 0, ',', '.'),
+            $quantities->isEmpty() ? '0' : $quantities->implode(' + '),
+        );
+    }
+
+    private static function cupPrintingService(): ?Service
+    {
+        return Service::query()
+            ->where('code', Service::CUP_PRINTING_CODE)
+            ->where('is_active', true)
+            ->first();
     }
 
     /** @param array<string, mixed> $data */

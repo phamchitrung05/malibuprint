@@ -6,6 +6,7 @@ use App\Filament\Resources\Orders\Concerns\HandlesStagedAttachments;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Services\AttachmentManager;
 use App\Services\OrderInventoryManager;
+use App\Services\OrderItemServiceManager;
 use App\Support\StatusApp;
 use Filament\Resources\Pages\EditRecord;
 
@@ -20,6 +21,15 @@ class EditOrder extends EditRecord
 
     /** @var array<string, string> */
     private array $stagedAttachmentNames = [];
+
+    /** @var array<int|string, array<string, mixed>> */
+    private array $itemServiceStates = [];
+
+    protected function beforeValidate(): void
+    {
+        // Giữ cả giá trị false của toggle để OrderItemServiceManager biết cần xóa dịch vụ đã chọn.
+        $this->itemServiceStates = $this->form->getRawState()['items'] ?? [];
+    }
 
     protected function authorizeAccess(): void
     {
@@ -55,6 +65,8 @@ class EditOrder extends EditRecord
 
     protected function afterSave(): void
     {
+        // Dòng sản phẩm đã được cập nhật, lúc này mới đồng bộ quantity và subtotal của dịch vụ snapshot.
+        app(OrderItemServiceManager::class)->syncForOrder($this->record->id, $this->itemServiceStates);
         $this->record->recalculateTotals();
         // Đồng bộ theo phần chênh lệch sau khi Repeater đã lưu Order Item mới.
         app(OrderInventoryManager::class)->syncForOrder($this->record->id, auth()->id());

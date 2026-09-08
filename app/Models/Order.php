@@ -8,6 +8,7 @@ use App\Support\StatusApp;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Spatie\Activitylog\Models\Activity;
@@ -86,6 +87,16 @@ class Order extends Model
         return $this->hasMany(InventoryMovement::class);
     }
 
+    public function itemServices(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            OrderItemService::class,
+            OrderItem::class,
+            'order_id',
+            'order_item_id',
+        );
+    }
+
     public function shipping(): HasMany
     {
         return $this->hasMany(Shipping::class);
@@ -112,9 +123,11 @@ class Order extends Model
      */
     public function recalculateTotals(): void
     {
-        $subtotal = (float) $this->items()
+        $productSubtotal = (float) $this->items()
             ->selectRaw('COALESCE(SUM(quantity * unit_price), 0) as total')
             ->value('total');
+        $serviceSubtotal = (float) $this->itemServices()->sum('order_item_services.subtotal');
+        $subtotal = $productSubtotal + $serviceSubtotal;
         $discount = min(max(0, (float) $this->discount), $subtotal);
         $shippingFee = max(0, (float) $this->shipping_fee);
 

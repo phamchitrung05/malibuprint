@@ -82,8 +82,8 @@
                             <div class="flex flex-col items-center">
                                 <div @class([
                                     'flex size-8 items-center justify-center rounded-full ring-4 ring-white',
-                                    ($status['progress_class'] ?? 'bg-slate-400').' text-white' => $isReached,
-                                    'bg-white text-slate-400 ring-slate-100' => ! $isReached,
+                                    ($status['progress_class'] ?? 'bg-slate-400').' text-white',
+                                    'opacity-40' => ! $isReached,
                                 ])>
                                     @if ($isReached)
                                         <x-heroicon-s-check class="size-4"/>
@@ -91,7 +91,11 @@
                                         <span class="size-2 rounded-full bg-current"></span>
                                     @endif
                                 </div>
-                                <span class="mt-2 text-xs font-semibold {{ $isReached ? ($status['label_classes'] ?? 'text-slate-800') : 'text-slate-400' }}">{{ $status['label'] }}</span>
+                                <span @class([
+                                    'mt-2 text-xs font-semibold',
+                                    $status['label_classes'] ?? 'text-slate-800',
+                                    'opacity-40' => ! $isReached,
+                                ])>{{ $status['label'] }}</span>
                                 <span class="mt-0.5 text-[11px] text-slate-400">
                                     {{ $isCurrent ? 'Đang thực hiện' : ($isDone ? 'Đã hoàn thành' : 'Chưa thực hiện') }}
                                 </span>

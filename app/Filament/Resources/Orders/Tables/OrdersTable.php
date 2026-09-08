@@ -28,7 +28,13 @@ class OrdersTable
             ->columns([
                 TextColumn::make('order_code')->label('Mã đơn')->searchable()->sortable(),
                 TextColumn::make('customer.name')->label('Khách hàng')->searchable(),
-                TextColumn::make('delivery_date')->label('Ngày dự kiến giao')->date('d/m/Y')->sortable(),
+                TextColumn::make('delivery_date')
+                    ->label('Ngày dự kiến giao')
+                    ->date('d/m/Y')
+                    ->description(fn (Order $record): ?string => $record->status === StatusApp::value('order.status', 'completed')
+                        ? null
+                        : self::deliveryDateDistance($record->delivery_date))
+                    ->sortable(),
                 TextColumn::make('status')
                     ->label('Trạng thái')
                     ->badge()
@@ -106,7 +112,7 @@ class OrdersTable
                     ->extraModalWindowAttributes(['class' => 'order-view-modal-window lg'])
                     ->modalContent(fn (Order $record) => view('filament.resources.orders.actions.view-order', [
                         // Nạp dữ liệu của tất cả tab một lần để việc chuyển tab không phát sinh query mới.
-                        'order' => $record->loadMissing(['customer', 'items.productSku.product', 'payments', 'shipping', 'activities.causer', 'attachments.managedFile']),
+                        'order' => $record->loadMissing(['customer', 'items.productSku.product', 'items.services.service', 'payments', 'shipping', 'activities.causer', 'attachments.managedFile']),
                     ])),
                 Action::make('updateStatus')
                     ->label('Cập nhật trạng thái')
@@ -120,7 +126,7 @@ class OrdersTable
                         'order' => $record,
                     ]))
                     ->modalWidth('2xl')
-                    ->extraModalWindowAttributes(['class' => 'order-view-modal-window sm'])
+                    ->extraModalWindowAttributes(['class' => 'order-view-modal-window s700'])
                      // Component Livewire có nút lưu riêng nên ẩn submit mặc định của Filament action.
                     ->modalSubmitAction(false),
                 Action::make('customerStock')
@@ -141,6 +147,58 @@ class OrdersTable
                         StatusApp::value('order.status', 'completed'),
                         StatusApp::value('order.status', 'cancelled'),
                     ], true)),
-            ]);
+            ])
+            // Order còn hoạt động dùng chung một nhóm; ngày giao gần hôm nay nhất đứng trước.
+            ->defaultSort(fn (Builder $query): Builder => self::applyOperationalSort($query));
+    }
+
+    private static function applyOperationalSort(Builder $query): Builder
+    {
+        $statusColumn = $query->qualifyColumn('status');
+        $deliveryDateColumn = $query->qualifyColumn('delivery_date');
+        $activeStatuses = [
+            StatusApp::value('order.status', 'pending'),
+            StatusApp::value('order.status', 'processing'),
+        ];
+        $today = today()->toDateString();
+
+        // Cú pháp tính chênh lệch ngày khác nhau theo database; kết quả đều là số ngày tuyệt đối.
+        $dateDistanceExpression = match ($query->getConnection()->getDriverName()) {
+            'mysql', 'mariadb' => "ABS(DATEDIFF({$deliveryDateColumn}, ?))",
+            'pgsql' => "ABS({$deliveryDateColumn}::date - ?::date)",
+            'sqlsrv' => "ABS(DATEDIFF(day, {$deliveryDateColumn}, ?))",
+            default => "ABS(julianday({$deliveryDateColumn}) - julianday(?))",
+        };
+
+        return $query
+            ->orderByRaw("CASE {$statusColumn} WHEN ? THEN 0 WHEN ? THEN 0 WHEN ? THEN 1 WHEN ? THEN 2 ELSE 3 END", [
+                StatusApp::value('order.status', 'pending'),
+                StatusApp::value('order.status', 'processing'),
+                StatusApp::value('order.status', 'completed'),
+                StatusApp::value('order.status', 'cancelled'),
+            ])
+            ->orderByRaw("CASE WHEN {$statusColumn} IN (?, ?) AND {$deliveryDateColumn} IS NULL THEN 1 ELSE 0 END", $activeStatuses)
+            ->orderByRaw("CASE WHEN {$statusColumn} IN (?, ?) THEN {$dateDistanceExpression} ELSE 0 END", [
+                ...$activeStatuses,
+                $today,
+            ])
+            // Nếu cùng ngày dự kiến, đơn mới tạo được ưu tiên trước đơn đang xử lý.
+            ->orderByRaw("CASE {$statusColumn} WHEN ? THEN 0 WHEN ? THEN 1 ELSE 0 END", $activeStatuses)
+            ->latest($query->qualifyColumn('created_at'));
+    }
+
+    private static function deliveryDateDistance(?Carbon $deliveryDate): ?string
+    {
+        if ($deliveryDate === null) {
+            return null;
+        }
+
+        $days = (int) today()->diffInDays($deliveryDate->copy()->startOfDay(), false);
+
+        return match (true) {
+            $days === 0 => 'Hôm nay',
+            $days > 0 => "Còn {$days} ngày",
+            default => 'Trễ '.abs($days).' ngày',
+        };
     }
 }

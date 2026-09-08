@@ -76,7 +76,7 @@
         >
             <div
                 class="grid grid-cols-1 gap-5
-                               md:grid-cols-[1fr_auto_1fr_auto_0.8fr]
+                               md:grid-cols-[1fr_auto_1fr_auto_1fr]
                                md:items-center"
             >
 
@@ -155,7 +155,7 @@
 
                     <div>
                         <p class="text-[16px] text-slate-500">
-                            Giá trị hàng tồn
+                            Giá trị sản phẩm tồn
                         </p>
 
                         <div
@@ -171,33 +171,17 @@
                 {{-- separator --}}
                 <div class="hidden h-16 w-px bg-blue-200 md:block"></div>
 
-                {{-- Last update --}}
-                <div
-                    class="flex items-center gap-3 text-[14px]
-                                   font-medium text-slate-500"
-                >
-                    <svg
-                        class="size-6 shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                    >
-                        <circle
-                            cx="12"
-                            cy="12"
-                            r="9"
-                            stroke-width="1.8"
-                        />
-                        <path
-                            stroke-linecap="round"
-                            stroke-width="1.8"
-                            d="M12 11v5m0-8h.01"
-                        />
-                    </svg>
-
-                    <span>
-                                Cập nhật theo tồn hiện tại
-                            </span>
+                {{-- Tổng phí dịch vụ của toàn bộ Order, không giảm theo số lượng đã xuất. --}}
+                <div class="flex items-center gap-5">
+                    <div class="flex size-16 shrink-0 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+                        <x-heroicon-o-wrench-screwdriver class="size-8"/>
+                    </div>
+                    <div>
+                        <p class="text-[16px] text-slate-500">Tổng tiền dịch vụ</p>
+                        <div class="mt-1 whitespace-nowrap text-[29px] font-bold leading-none tracking-tight text-violet-700">
+                            {{ number_format($totalServiceValue, 0, ',', '.') }} đ
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -241,7 +225,7 @@
         <div x-show="tab === 'inventory'" x-cloak>
             <div class="overflow-hidden rounded-xl border border-slate-200">
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[900px] border-collapse">
+                    <table class="w-full min-w-[1100px] border-collapse">
                         <thead>
                         <tr class="bg-slate-100/90 text-left">
                             <th class="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">Sản phẩm</th>
@@ -251,6 +235,8 @@
                             </th>
                             <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-200">Đã xuất</th>
                             <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-200">Còn lại</th>
+                            <th class="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">Dịch vụ</th>
+                            <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-200">Phí DV còn lại</th>
                             <th class="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">Xuất lần
                                 này
                             </th>
@@ -270,12 +256,23 @@
                                 <td class="text-right">{{ number_format($item->released_quantity) }}</td>
                                 <td class="text-right font-medium">{{ number_format($remainingQuantity) }}</td>
                                 <td>
+                                    @forelse ($item->orderItem->services as $service)
+                                        <p class="font-medium text-blue-700">{{ $service->service_name }}</p>
+                                        <p class="text-xs text-slate-500">{{ number_format((float) $service->unit_price, 0, ',', '.') }}đ/SP</p>
+                                    @empty
+                                        <span class="text-slate-400">Không có</span>
+                                    @endforelse
+                                </td>
+                                <td class="text-right font-medium text-blue-700">
+                                    {{ number_format($remainingQuantity * $item->orderItem->services->sum(fn ($service): float => (float) $service->unit_price), 0, ',', '.') }}đ
+                                </td>
+                                <td>
                                     <input
                                         type="number"
                                         min="0"
                                         max="{{ $remainingQuantity }}"
                                         step="1"
-                                        wire:model="quantities.{{ $item->id }}"
+                                        wire:model.live.debounce.300ms="quantities.{{ $item->id }}"
                                         @disabled($remainingQuantity === 0)
                                         class="release-quantity-input block w-32 rounded-lg bg-slate-50 text-sm disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
                                     >
@@ -286,7 +283,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="py-8 text-center text-slate-500">Order này chưa có hàng tồn.</td>
+                                <td colspan="9" class="py-8 text-center text-slate-500">Order này chưa có hàng tồn.</td>
                             </tr>
                         @endforelse
                         </tbody>
@@ -297,6 +294,21 @@
             @error('quantities')
             <p class="pt-2 text-sm text-red-600">{{ $message }}</p>
             @enderror
+
+            <div class="mt-3 grid gap-3 rounded-xl border border-blue-100 bg-blue-50/60 p-4 text-sm sm:grid-cols-3">
+                <div>
+                    <p class="text-slate-500">Tiền sản phẩm dự kiến</p>
+                    <p class="mt-1 font-bold text-slate-900">{{ number_format($releaseProductPreview, 0, ',', '.') }}đ</p>
+                </div>
+                <div>
+                    <p class="text-slate-500">Tiền dịch vụ dự kiến</p>
+                    <p class="mt-1 font-bold text-blue-700">{{ number_format($releaseServicePreview, 0, ',', '.') }}đ</p>
+                </div>
+                <div>
+                    <p class="text-slate-500">Tạm tính trước phân bổ</p>
+                    <p class="mt-1 font-bold text-slate-900">{{ number_format($releaseProductPreview + $releaseServicePreview, 0, ',', '.') }}đ</p>
+                </div>
+            </div>
         </div>
 
         <div x-show="tab === 'receipts'" x-cloak>
@@ -309,7 +321,7 @@
         <div x-show="tab === 'history'" x-cloak>
             <div class="overflow-hidden rounded-xl border border-slate-200">
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[500px] border-collapse">
+                    <table class="w-full min-w-[1200px] border-collapse">
                         <thead>
                         <tr class="bg-slate-100/90 text-left">
                             <th>Mã phiếu</th>
@@ -317,6 +329,10 @@
                             <th>Sản phẩm</th>
                             <th>SKU</th>
                             <th class="text-right">Số lượng</th>
+                            <th class="text-right">Tiền SP</th>
+                            <th class="text-right">Tiền DV</th>
+                            <th class="text-right">Giảm giá</th>
+                            <th class="text-right">Điều chỉnh</th>
                             <th class="text-right">Phí giao hàng</th>
                             <th class="text-right">Tổng phiếu</th>
                             <th>Người xuất</th>
@@ -342,6 +358,12 @@
                                         <p>{{ number_format($releaseItem->quantity) }}</p>
                                     @endforeach
                                 </td>
+                                <td class="text-right">{{ number_format((float) $release->gross_product_amount, 0, ',', '.') }}đ</td>
+                                <td class="text-right font-medium text-blue-700">{{ number_format((float) $release->gross_service_amount, 0, ',', '.') }}đ</td>
+                                <td class="text-right text-red-600">-{{ number_format((float) $release->allocated_discount, 0, ',', '.') }}đ</td>
+                                <td class="text-right text-slate-500">
+                                    {{ (float) $release->reconciliation_adjustment > 0 ? '+' : '' }}{{ number_format((float) $release->reconciliation_adjustment, 0, ',', '.') }}đ
+                                </td>
                                 <td class="text-right">{{ number_format((float) $release->allocated_shipping_fee, 0, ',', '.') }}
                                     đ
                                 </td>
@@ -352,7 +374,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="py-8 text-center text-slate-500">Chưa có phiếu xuất hàng.</td>
+                                <td colspan="12" class="py-8 text-center text-slate-500">Chưa có phiếu xuất hàng.</td>
                             </tr>
                         @endforelse
                         </tbody>
