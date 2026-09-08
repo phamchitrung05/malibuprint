@@ -164,7 +164,6 @@ class ProductInventory extends Page implements HasTable
             ->recordActions([
                 Action::make('viewSkuInventory')
                     ->label('Xem tồn kho SKU')
-                    ->tooltip('Xem tồn kho các SKU của sản phẩm')
                     ->iconButton()
                     ->icon(Heroicon::OutlinedEye)
                     ->color('info')

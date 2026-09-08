@@ -4,9 +4,9 @@ namespace Tests\Feature;
 
 use App\Enums\FulfillmentMode;
 use App\Enums\FulfillmentStatus;
-use App\Livewire\CustomerStockReleaseHistory;
-use App\Livewire\ReleaseCustomerStock;
-use App\Livewire\UpdateOrderStatus;
+use App\Livewire\CustomerStocks\CustomerStockReleaseHistory;
+use App\Livewire\CustomerStocks\ReleaseCustomerStock;
+use App\Livewire\Orders\UpdateOrderStatus;
 use App\Models\Customer;
 use App\Models\CustomerStock;
 use App\Models\Order;
@@ -208,6 +208,8 @@ class CustomerStockWorkflowTest extends TestCase
         Livewire::actingAs($user)
             ->test(CustomerStockReleaseHistory::class, ['customerStockId' => $stock->id])
             ->assertSee('Xác nhận')
+            ->assertSee('Xác nhận phiếu thu')
+            ->assertSee('Bạn chắc chắn đã thu đủ tiền của phiếu xuất này?')
             ->call('confirmPayment', $release->id)
             ->assertHasNoErrors();
 
@@ -223,7 +225,7 @@ class CustomerStockWorkflowTest extends TestCase
         $this->get(route('stock-releases.receipt.print', $release))
             ->assertOk()
             ->assertSee('PHIẾU THU')
-            ->assertSee('100.000đ')
+            ->assertSee('100.000 VNĐ')
             ->assertSee('In phiếu thu');
 
         Livewire::actingAs($user)

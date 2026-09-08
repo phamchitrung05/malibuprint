@@ -155,34 +155,13 @@
         </table>
     </div>
 
-    {{-- Modal xác nhận dùng giao diện ứng dụng, không dùng alert native của trình duyệt. --}}
-    <div
-        x-cloak
-        x-show="confirmReleaseId !== null"
-        x-on:keydown.escape.window="confirmReleaseId = null"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="confirm-payment-title"
-    >
-        <div x-on:click.outside="confirmReleaseId = null" class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <div class="flex size-11 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-                <x-heroicon-o-check class="size-6" />
-            </div>
-            <h2 id="confirm-payment-title" class="mt-4 text-lg font-bold text-slate-900">Xác nhận phiếu thu</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-500">Bạn chắc chắn đã thu đủ tiền của phiếu xuất này?</p>
-            <div class="mt-6 flex justify-end gap-3">
-                <button type="button" x-on:click="confirmReleaseId = null" class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">Hủy</button>
-                <button
-                    type="button"
-                    x-on:click="$wire.confirmPayment(confirmReleaseId); confirmReleaseId = null"
-                    wire:loading.attr="disabled"
-                    wire:target="confirmPayment"
-                    class="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50"
-                >
-                    Xác nhận
-                </button>
-            </div>
-        </div>
-    </div>
+    <x-ui.confirmation-modal
+        state="confirmReleaseId !== null"
+        close="confirmReleaseId = null"
+        confirm-action="$wire.confirmPayment(confirmReleaseId)"
+        title="Xác nhận phiếu thu"
+        description="Bạn chắc chắn đã thu đủ tiền của phiếu xuất này?"
+        tone="success"
+        wire-target="confirmPayment"
+    />
 </div>

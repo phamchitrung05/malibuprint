@@ -31,13 +31,11 @@ class UsersTable
             ->recordActions([
                 EditAction::make()
                     ->iconButton()
-                    ->icon(Heroicon::OutlinedPencilSquare)
-                    ->tooltip('Chỉnh sửa người dùng'),
+                    ->icon(Heroicon::OutlinedPencilSquare),
                 DeleteAction::make()
                     ->iconButton()
                     ->icon(Heroicon::OutlinedTrash)
-                    ->disabled(fn (User $record): bool => $record->is(auth()->user()))
-                    ->tooltip('Không thể xóa tài khoản đang đăng nhập'),
+                    ->disabled(fn (User $record): bool => $record->is(auth()->user())),
             ]);
     }
 }

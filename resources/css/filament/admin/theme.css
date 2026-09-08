@@ -135,4 +135,4 @@
 @source '../../../../app/Filament/**/*';
 @source '../../../../resources/views/filament/**/*';
 @source '../../../../resources/views/filament/resources/orders/actions/**/*.blade.php';
-@source '../../../../config/order.php';
+@source '../../../../config/status-app.php';

@@ -6,7 +6,7 @@
     $canFulfill = $order->status === $completedStatus;
 @endphp
 
-<div class="space-y-3 px-5">
+<div x-data="{ cancelConfirmationOpen: false }" class="space-y-3 px-5">
     <div class="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs text-blue-700">
         Quy trình sản xuất chỉ đi tới bước kế tiếp. Thanh toán và giao hàng được xác nhận độc lập.
     </div>
@@ -60,7 +60,18 @@
 
     @if (in_array($order->status, [$pendingStatus, $processingStatus], true))
         <div class="rounded-lg border border-red-100 bg-red-50/50 p-3">
-            <button type="button" wire:click="cancelOrder" wire:confirm="Bạn chắc chắn muốn hủy đơn hàng này?" wire:loading.attr="disabled" wire:target="cancelOrder" class="rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-semibold text-red-600 disabled:opacity-60">Hủy đơn hàng</button>
+            <button type="button" x-on:click="cancelConfirmationOpen = true" class="rounded-lg border border-red-300 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50">Hủy đơn hàng</button>
         </div>
+
+        <x-ui.confirmation-modal
+            state="cancelConfirmationOpen"
+            close="cancelConfirmationOpen = false"
+            confirm-action="$wire.cancelOrder()"
+            title="Xác nhận hủy đơn hàng"
+            :description="'Đơn hàng #'.$order->order_code.' sẽ bị hủy và toàn bộ tồn kho đã giữ cho đơn sẽ được hoàn lại. Hành động này không thể hoàn tác.'"
+            confirm-label="Xác nhận hủy"
+            cancel-label="Giữ đơn hàng"
+            wire-target="cancelOrder"
+        />
     @endif
 </div>

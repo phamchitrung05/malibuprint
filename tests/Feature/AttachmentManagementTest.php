@@ -5,7 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Resources\Orders\Pages\CreateOrder;
 use App\Filament\Resources\Orders\Pages\EditOrder;
 use App\Jobs\UploadManagedFileToGoogleDrive;
-use App\Livewire\ManageAttachments;
+use App\Livewire\Orders\ManageAttachments;
 use App\Models\Customer;
 use App\Models\ManagedFile;
 use App\Models\Order;
@@ -171,6 +171,9 @@ class AttachmentManagementTest extends TestCase
                 'attachableId' => $order->id,
             ])
             ->assertSee('file-thuoc-order.pdf')
+            ->assertSee('Xác nhận gỡ file')
+            ->assertSee('Gỡ liên kết')
+            ->assertDontSee('wire:confirm', false)
             ->assertDontSee('file-khong-thuoc-order.pdf')
             ->assertDontSee('Thư viện file')
             ->assertDontSee('Đưa vào hàng chờ');

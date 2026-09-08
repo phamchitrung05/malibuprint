@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Orders;
 
 use App\Jobs\UploadManagedFileToGoogleDrive;
 use App\Models\Attachment;
@@ -71,7 +71,7 @@ class ManageAttachments extends Component
         $attachable = $this->getAttachable();
         $attachments = $attachable->attachments()->with(['managedFile.uploader'])->latest()->get();
 
-        return view('livewire.manage-attachments', [
+        return view('livewire.orders.manage-attachments', [
             'attachments' => $attachments,
             'shouldPoll' => $attachments->contains(fn (Attachment $attachment): bool => in_array(
                 $attachment->managedFile->status,

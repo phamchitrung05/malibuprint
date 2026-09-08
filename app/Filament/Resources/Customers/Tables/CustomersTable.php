@@ -27,8 +27,7 @@ class CustomersTable
             ->recordActions([
                 EditAction::make()
                     ->iconButton()
-                    ->icon(Heroicon::OutlinedPencilSquare)
-                    ->tooltip('Chỉnh sửa khách hàng'),
+                    ->icon(Heroicon::OutlinedPencilSquare),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

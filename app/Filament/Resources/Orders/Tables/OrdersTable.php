@@ -5,11 +5,15 @@ namespace App\Filament\Resources\Orders\Tables;
 use App\Enums\FulfillmentMode;
 use App\Filament\Resources\CustomerStocks\CustomerStockResource;
 use App\Models\Order;
+use App\Services\OrderReplicator;
 use App\Support\StatusApp;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
@@ -18,7 +22,9 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class OrdersTable
 {
@@ -102,6 +108,13 @@ class OrdersTable
                     }),
             ])
             ->recordActions([
+                Action::make('printOrder')
+                    ->label('In đơn hàng')
+                    ->iconButton()
+                    ->icon(Heroicon::OutlinedPrinter)
+                    ->color('info')
+                    ->url(fn (Order $record): string => route('orders.print', $record))
+                    ->openUrlInNewTab(),
                 ViewAction::make()
                     ->iconButton()
                     ->icon(Heroicon::OutlinedEye)
@@ -116,7 +129,6 @@ class OrdersTable
                     ])),
                 Action::make('updateStatus')
                     ->label('Cập nhật trạng thái')
-                    ->tooltip('Cập nhật trạng thái đơn hàng')
                     ->iconButton()
                     ->icon(Heroicon::OutlinedArrowPathRoundedSquare)
                     ->color('warning')
@@ -131,7 +143,6 @@ class OrdersTable
                     ->modalSubmitAction(false),
                 Action::make('customerStock')
                     ->label('Xem Customer Stock')
-                    ->tooltip('Mở tồn kho của Order')
                     ->iconButton()
                     ->icon(Heroicon::OutlinedArchiveBox)
                     ->color('info')
@@ -140,6 +151,38 @@ class OrdersTable
                     ->url(fn (Order $record): string => CustomerStockResource::getUrl('index', [
                         'order_id' => $record->id,
                     ])),
+                Action::make('recreateOrder')
+                    ->label('Tạo lại đơn hàng')
+                    ->iconButton()
+                    ->icon(Heroicon::OutlinedDocumentDuplicate)
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (Order $record): string => "Tạo lại Order {$record->order_code}")
+                    ->modalDescription('Order mới sẽ được cấp lại tồn kho và bắt đầu ở trạng thái mới tạo.')
+                    ->modalSubmitActionLabel('Tạo lại')
+                    ->action(function (Action $action, Order $record): void {
+                        try {
+                            $newOrder = app(OrderReplicator::class)->replicate($record, auth()->id());
+                        } catch (ValidationException $exception) {
+                            $message = collect($exception->errors())->flatten()->first()
+                                ?? 'Dữ liệu Order không hợp lệ để tạo lại.';
+
+                            Notification::make()
+                                ->title('Không thể tạo lại đơn hàng')
+                                ->body($message)
+                                ->danger()
+                                ->persistent()
+                                ->send();
+
+                            $action->halt();
+                        }
+
+                        Notification::make()
+                            ->title('Đã tạo lại đơn hàng')
+                            ->body("Mã Order mới: {$newOrder->order_code}")
+                            ->success()
+                            ->send();
+                    }),
                 EditAction::make()
                     ->iconButton()
                     ->icon(Heroicon::OutlinedPencilSquare)
@@ -147,6 +190,17 @@ class OrdersTable
                         StatusApp::value('order.status', 'completed'),
                         StatusApp::value('order.status', 'cancelled'),
                     ], true)),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    BulkAction::make('printOrders')
+                        ->label('In các đơn đã chọn')
+                        ->icon(Heroicon::OutlinedPrinter)
+                        ->url(fn (Collection $records): string => route('orders.print.bulk', [
+                            'ids' => $records->modelKeys(),
+                        ]))
+                        ->openUrlInNewTab(),
+                ]),
             ])
             // Order còn hoạt động dùng chung một nhóm; ngày giao gần hôm nay nhất đứng trước.
             ->defaultSort(fn (Builder $query): Builder => self::applyOperationalSort($query));

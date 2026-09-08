@@ -47,10 +47,15 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <button type="button" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+            <a
+                href="{{ route('orders.print', $order) }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
                 <x-heroicon-o-printer class="size-4"/>
                 In đơn hàng
-            </button>
+            </a>
             <button type="button" class="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
                 <x-heroicon-o-document-duplicate class="size-4"/>
                 Sao chép
@@ -81,9 +86,9 @@
                             @endphp
                             <div class="flex flex-col items-center">
                                 <div @class([
-                                    'flex size-8 items-center justify-center rounded-full ring-4 ring-white',
-                                    ($status['progress_class'] ?? 'bg-slate-400').' text-white',
-                                    'opacity-40' => ! $isReached,
+                                    'flex size-8 items-center justify-center rounded-full border ring-4 ring-white',
+                                    ($status['progress_class'] ?? 'bg-slate-400').' border-transparent text-white' => $isReached,
+                                    'border-slate-200 bg-white text-slate-300' => ! $isReached,
                                 ])>
                                     @if ($isReached)
                                         <x-heroicon-s-check class="size-4"/>
@@ -93,8 +98,8 @@
                                 </div>
                                 <span @class([
                                     'mt-2 text-xs font-semibold',
-                                    $status['label_classes'] ?? 'text-slate-800',
-                                    'opacity-40' => ! $isReached,
+                                    ($status['label_classes'] ?? 'text-slate-800') => $isReached,
+                                    'text-slate-400' => ! $isReached,
                                 ])>{{ $status['label'] }}</span>
                                 <span class="mt-0.5 text-[11px] text-slate-400">
                                     {{ $isCurrent ? 'Đang thực hiện' : ($isDone ? 'Đã hoàn thành' : 'Chưa thực hiện') }}

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\CustomerStocks;
 
 use App\Models\CustomerStock;
 use App\Services\PaymentManager;
@@ -48,7 +48,7 @@ class CustomerStockReleaseHistory extends Component
 
     public function render(): View
     {
-        return view('livewire.customer-stock-release-history', [
+        return view('livewire.customer-stocks.customer-stock-release-history', [
             'customerStock' => CustomerStock::query()
                 ->with([
                     'releases.payment.confirmer',

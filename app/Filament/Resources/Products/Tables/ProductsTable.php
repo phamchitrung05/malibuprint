@@ -28,8 +28,7 @@ class ProductsTable
             ->recordActions([
                 EditAction::make()
                     ->iconButton()
-                    ->icon(Heroicon::OutlinedPencilSquare)
-                    ->tooltip('Chỉnh sửa sản phẩm'),
+                    ->icon(Heroicon::OutlinedPencilSquare),
             ]);
     }
 }

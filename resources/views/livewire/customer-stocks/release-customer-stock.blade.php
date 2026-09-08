@@ -312,7 +312,7 @@
         </div>
 
         <div x-show="tab === 'receipts'" x-cloak>
-            <livewire:customer-stock-release-history
+            <livewire:customer-stocks.customer-stock-release-history
                 :customer-stock-id="$customerStock->id"
                 :key="'customer-stock-receipts-'.$customerStock->id"
             />

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\CustomerStocks;
 
 use App\Models\CustomerStock;
 use App\Services\StockReleaseManager;
@@ -85,7 +85,7 @@ class ReleaseCustomerStock extends Component
                 * $item->orderItem->services->sum(fn ($service): float => (float) $service->unit_price);
         });
 
-        return view('livewire.release-customer-stock', [
+        return view('livewire.customer-stocks.release-customer-stock', [
             'customerStock' => $customerStock,
             'totalRemainingQuantity' => $totalRemainingQuantity,
             'remainingStockValue' => $remainingStockValue,

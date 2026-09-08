@@ -23,7 +23,6 @@ class CustomerStocksTable
             ->recordActions([
                 Action::make('viewStock')
                     ->label('Xem tồn kho')
-                    ->tooltip('Xem tồn kho và xuất hàng')
                     ->iconButton()
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('success')

@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Filament\Resources\Orders\Pages\ListOrders;
-use App\Livewire\UpdateOrderStatus;
+use App\Livewire\Orders\UpdateOrderStatus;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\Product;
@@ -67,6 +67,9 @@ class OrderWorkflowTest extends TestCase
         $this->actingAs($user);
 
         Livewire::test(UpdateOrderStatus::class, ['orderId' => $order->id])
+            ->assertSee('Xác nhận hủy đơn hàng')
+            ->assertSee('Giữ đơn hàng')
+            ->assertDontSee('wire:confirm', false)
             ->call('cancelOrder')
             ->assertHasNoErrors();
 

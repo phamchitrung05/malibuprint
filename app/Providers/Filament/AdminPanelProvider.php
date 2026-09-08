@@ -30,6 +30,9 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             // CRUD Filament phải atomic để Order, Order Item và phân bổ tồn cùng commit hoặc cùng rollback.
             ->databaseTransactions()
+            // Sau khi tạo hoặc cập nhật, mọi Resource quay về bảng danh sách thay vì ở lại form.
+            ->resourceCreatePageRedirect('index')
+            ->resourceEditPageRedirect('index')
             ->colors([
                 'primary' => [
                     50 => 'oklch(0.97 0.015 255)',

@@ -7,6 +7,7 @@ use App\Models\InventoryMovement;
 use App\Models\ManagedFile;
 use App\Models\Order;
 use App\Models\OrderInventoryAllocation;
+use App\Models\OrderItem;
 use App\Models\ProductSku;
 use App\Models\StockRelease;
 use App\Models\StockReleaseItemService;
@@ -33,7 +34,10 @@ class DemoDataSeederTest extends TestCase
         $this->assertDatabaseCount('product_sku', 20);
         $this->assertDatabaseCount('services', 1);
         $this->assertDatabaseCount('orders', 20);
-        $this->assertDatabaseCount('order_item_services', 17);
+        $cupPrintingItemCount = OrderItem::query()
+            ->whereHas('productSku.product', fn ($query) => $query->where('product_type', 'in_ly'))
+            ->count();
+        $this->assertDatabaseCount('order_item_services', $cupPrintingItemCount);
         $this->assertDatabaseCount('customer_stock', 7);
         $this->assertDatabaseCount('stock_releases', 9);
         $this->assertGreaterThan(0, StockReleaseItemService::query()->count());

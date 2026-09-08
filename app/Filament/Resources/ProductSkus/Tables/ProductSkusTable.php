@@ -64,7 +64,6 @@ class ProductSkusTable
             ->recordActions([
                 Action::make('adjustInventory')
                     ->label('Điều chỉnh tồn')
-                    ->tooltip('Điều chỉnh tăng hoặc giảm tồn khả dụng')
                     ->iconButton()
                     ->icon(Heroicon::OutlinedArrowsUpDown)
                     ->color('warning')
@@ -107,7 +106,6 @@ class ProductSkusTable
                     }),
                 Action::make('inventoryHistory')
                     ->label('Lịch sử tồn')
-                    ->tooltip('Xem lịch sử tăng giảm tồn kho')
                     ->iconButton()
                     ->icon(Heroicon::OutlinedClock)
                     ->color('info')
@@ -122,8 +120,7 @@ class ProductSkusTable
                     ->modalSubmitAction(false),
                 EditAction::make()
                     ->iconButton()
-                    ->icon(Heroicon::OutlinedPencilSquare)
-                    ->tooltip('Chỉnh sửa SKU'),
+                    ->icon(Heroicon::OutlinedPencilSquare),
             ]);
     }
 }

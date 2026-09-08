@@ -39,8 +39,7 @@ class ServicesTable
             ->recordActions([
                 EditAction::make()
                     ->iconButton()
-                    ->icon(Heroicon::OutlinedPencilSquare)
-                    ->tooltip('Chỉnh sửa dịch vụ'),
+                    ->icon(Heroicon::OutlinedPencilSquare),
             ]);
     }
 }

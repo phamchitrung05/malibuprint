@@ -46,16 +46,16 @@
                     @endphp
                     <div class="flex flex-col items-center">
                         <div @class([
-                            'z-10 flex size-8 items-center justify-center rounded-full ring-4 ring-white',
-                            ($stage['progress_class'] ?? 'bg-slate-400').' text-white',
-                            'opacity-40' => ! $isReached,
+                            'z-10 flex size-8 items-center justify-center rounded-full border ring-4 ring-white',
+                            ($stage['progress_class'] ?? 'bg-slate-400').' border-transparent text-white' => $isReached,
+                            'border-slate-200 bg-white text-slate-300' => ! $isReached,
                         ])>
                             @if ($isReached)<x-heroicon-s-check class="size-4"/>@else<span class="size-2 rounded-full bg-current"></span>@endif
                         </div>
                         <span @class([
                             'mt-2 text-xs font-semibold',
-                            $stage['label_classes'] ?? 'text-slate-700',
-                            'opacity-40' => ! $isReached,
+                            ($stage['label_classes'] ?? 'text-slate-700') => $isReached,
+                            'text-slate-400' => ! $isReached,
                         ])>{{ $stage['label'] }}</span>
                     </div>
                 @endforeach

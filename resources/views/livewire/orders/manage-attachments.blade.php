@@ -1,4 +1,4 @@
-<div @if ($shouldPoll) wire:poll.3s @endif class="text-left">
+<div x-data="{ detachAttachmentId: null }" @if ($shouldPoll) wire:poll.3s @endif class="text-left">
     <section>
         {{-- Danh sách gồm cả pending/failed để file staging vẫn có thể tải xuống hoặc retry. --}}
         <div class="space-y-2">
@@ -22,7 +22,7 @@
                         @if ($file->status === \App\Support\StatusApp::value('managed_file.status', 'failed') && $file->temporary_path)
                             <button type="button" wire:click="retryUpload({{ $file->id }})" class="rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-600">Thử lại</button>
                         @endif
-                        <button type="button" wire:click="detachFile({{ $attachment->id }})" wire:confirm="Gỡ liên kết file khỏi đối tượng này?" class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600">Gỡ</button>
+                        <button type="button" x-on:click="detachAttachmentId = {{ $attachment->id }}" class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600">Gỡ</button>
                     </div>
                 </div>
             @empty
@@ -30,4 +30,15 @@
             @endforelse
         </div>
     </section>
+
+    <x-ui.confirmation-modal
+        state="detachAttachmentId !== null"
+        close="detachAttachmentId = null"
+        confirm-action="$wire.detachFile(detachAttachmentId)"
+        title="Xác nhận gỡ file"
+        description="Liên kết file với đối tượng hiện tại sẽ bị gỡ. File gốc vẫn được giữ lại trong hệ thống."
+        confirm-label="Gỡ liên kết"
+        cancel-label="Giữ file"
+        wire-target="detachFile"
+    />
 </div>

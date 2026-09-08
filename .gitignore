@@ -27,3 +27,12 @@ Thumbs.db
 /database/customers.sql
 /database/products.sql
 /database/product_skus.sql
+
+# Export dữ liệu thật của database (PII khách hàng) - không đưa lên repo
+/database/database_export.json
+/storage/database_export.json
+/storage/drawdb_malibuprint.json
+
+# Script export dữ liệu thật - chỉ dùng local, không đưa lên repo
+/storage/export-database-json.php
+/storage/export-drawdb-json.php

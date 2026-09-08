@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire;
+namespace App\Livewire\Orders;
 
 use App\Models\Order;
 use App\Services\CustomerStockManager;
@@ -120,7 +120,7 @@ class UpdateOrderStatus extends Component
             ->where('status', StatusApp::value('payment.status', 'completed'))
             ->sum('amount');
 
-        return view('livewire.update-order-status', [
+        return view('livewire.orders.update-order-status', [
             'order' => $order,
             'paidAmount' => $paidAmount,
             'remainingAmount' => max(0, (float) $order->total_amount - $paidAmount),
