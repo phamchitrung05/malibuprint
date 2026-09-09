@@ -1286,5 +1286,12 @@
 </div>
 @endforeach
 
+<script>
+    // Tab in được mở bằng target="_blank" nên có thể tự đóng sau khi hộp thoại in kết thúc.
+    window.addEventListener('afterprint', () => {
+        window.setTimeout(() => window.close(), 100);
+    });
+</script>
+
 </body>
 </html>
