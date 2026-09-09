@@ -18,15 +18,15 @@
     <!-- Tailwind CSS 4 -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
-    <!-- Google Font -->
+    <!-- Baloo 2 hỗ trợ tiếng Việt và đầy đủ weight dùng trong thiết kế trang in. -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&display=swap"
         rel="stylesheet"
     >
 
     <style type="text/tailwindcss">
         @theme {
-            --font-sans: "Be Vietnam Pro", Arial, sans-serif;
+            --font-sans: "Baloo 2", Arial, sans-serif;
 
             --color-primary: #0879d1;
             --color-primary-dark: #0564b4;
@@ -56,7 +56,7 @@
             margin: 0;
             padding: 0;
             background: #e5e7eb;
-            font-family: "Be Vietnam Pro", Arial, sans-serif;
+            font-family: "Baloo 2", Arial, sans-serif;
         }
 
         body {
@@ -354,7 +354,7 @@
         }
 
         .order-meta-label {
-            font-weight: 500;
+            font-weight: 600;
         }
 
         /* =========================================
@@ -929,9 +929,9 @@
                             <line x1="8" y1="2" x2="8" y2="6"/>
                             <line x1="3" y1="10" x2="21" y2="10"/>
                         </svg>
-                        <span class="order-meta-label">{{ $document['date_label'] }}</span>
+                        <span class="order-meta-label">Ngày Đặt Hàng</span>
                         <span>:</span>
-                        <span>{{ $document['date']?->format('d/m/Y') ?? '—' }}</span>
+                        <span class="order-meta-label">{{ $document['date']?->format('d/m/Y') ?? '—' }}</span>
                     </div>
 
                     <div class="order-meta-row">
@@ -941,31 +941,9 @@
                             <line x1="8" y1="2" x2="8" y2="6"/>
                             <line x1="3" y1="10" x2="21" y2="10"/>
                         </svg>
-                        <span class="order-meta-label">{{ $document['secondary_date_label'] }}</span>
+                        <span class="order-meta-label">Ngày giao hàng dự kiến</span>
                         <span>:</span>
-                        <span>{{ $document['secondary_date']?->format('d/m/Y') ?? '—' }}</span>
-                    </div>
-
-                    <div class="order-meta-row">
-                        <svg class="order-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 2h9l5 5v15H6z"/>
-                            <path d="M14 2v6h6"/>
-                            <line x1="9" y1="13" x2="17" y2="13"/>
-                            <line x1="9" y1="17" x2="17" y2="17"/>
-                        </svg>
-                        <span class="order-meta-label">Số trang</span>
-                        <span>:</span>
-                        <span>{{ $pageNumber }}/{{ $pageCount }}</span>
-                    </div>
-
-                    <div class="order-meta-row">
-                        <svg class="order-meta-icon" viewBox="0 0 24 24" fill="currentColor">
-                            <circle cx="12" cy="7" r="4"/>
-                            <path d="M4 22a8 8 0 0 1 16 0H4z"/>
-                        </svg>
-                        <span class="order-meta-label">Nhân viên</span>
-                        <span>:</span>
-                        <span>{{ $document['employee'] ?: '—' }}</span>
+                        <span class="order-meta-label">{{ $document['secondary_date']?->format('d/m/Y') ?? '—' }}</span>
                     </div>
 
                 </div>
@@ -991,7 +969,7 @@
                         <path d="M15 13a6 6 0 0 1 7 6h-5"/>
                     </svg>
 
-                    THÔNG TIN KHÁCH HÀNG
+                    THÔNG TIN GIAO HÀNG
                 </div>
 
                 <div class="info-list">
@@ -1012,12 +990,6 @@
                         <span class="info-label">Điện thoại</span>
                         <span>:</span>
                         <span>{{ $customer['phone'] ?? '—' }}</span>
-                    </div>
-
-                    <div class="info-row">
-                        <span class="info-label">Mã khách hàng</span>
-                        <span>:</span>
-                        <span>{{ $customer['code'] ?? '—' }}</span>
                     </div>
 
                 </div>
