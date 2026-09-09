@@ -1044,21 +1044,9 @@
                 <div class="info-list">
 
                     <div class="info-row">
-                        <span class="info-label">Loại đơn hàng</span>
-                        <span>:</span>
-                        <span>{{ $document['document_type'] }}</span>
-                    </div>
-
-                    <div class="info-row">
                         <span class="info-label">Thanh toán</span>
                         <span>:</span>
                         <span>{{ $document['payment_status'] }}</span>
-                    </div>
-
-                    <div class="info-row">
-                        <span class="info-label">Trạng thái</span>
-                        <span>:</span>
-                        <span class="status">{{ $document['status'] }}</span>
                     </div>
 
                     <div class="info-row">
