@@ -1,4 +1,4 @@
-<div x-data="{ confirmReleaseId: null, expandedReleaseId: null }" class="mt-5 overflow-hidden rounded-xl border border-slate-200">
+<div x-data="{ confirmReleaseId: null, expandedReleaseId: null }" class=" overflow-hidden rounded-xl border border-slate-200">
     {{-- Payment chỉ được tạo khi người dùng xác nhận phiếu xuất tương ứng. --}}
     <div class="overflow-auto inventory-modal-scroll h22vh">
         <table class="w-full min-w-[900px] border-collapse">
