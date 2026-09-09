@@ -55,9 +55,17 @@ class OrderPrintTest extends TestCase
         $firstOrder = $this->createPrintableOrder($user, 'PRINT-FIRST');
         $secondOrder = $this->createPrintableOrder($user, 'PRINT-SECOND');
 
-        Livewire::actingAs($user)
+        $component = Livewire::actingAs($user)
             ->test(ListOrders::class)
             ->assertTableBulkActionExists('printOrders');
+
+        $printAction = $component->instance()->getTable()->getBulkAction('printOrders');
+        $clickHandler = $printAction?->getExtraAttributes()['x-on:click.prevent'] ?? '';
+
+        // URL được dựng từ selection Alpine lúc click, không dùng danh sách record đã render từ lần trước.
+        $this->assertSame(route('orders.print.bulk'), $printAction?->getUrl());
+        $this->assertStringContainsString('[...selectedRecords]', $clickHandler);
+        $this->assertStringContainsString('deselectAllRecords()', $clickHandler);
 
         $this->actingAs($user)
             ->get(route('orders.print.bulk', [

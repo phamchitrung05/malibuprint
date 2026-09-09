@@ -22,7 +22,6 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
@@ -196,10 +195,21 @@ class OrdersTable
                     BulkAction::make('printOrders')
                         ->label('In các đơn đã chọn')
                         ->icon(Heroicon::OutlinedPrinter)
-                        ->url(fn (Collection $records): string => route('orders.print.bulk', [
-                            'ids' => $records->modelKeys(),
-                        ]))
-                        ->openUrlInNewTab(),
+                        ->url(fn (): string => route('orders.print.bulk'))
+                        // Dùng selection Alpine tại thời điểm click để không tái sử dụng URL của lần in trước.
+                        ->extraAttributes([
+                            'x-on:click.prevent' => <<<'JS'
+                                const query = new URLSearchParams();
+
+                                [...selectedRecords].forEach((id) => query.append('ids[]', id));
+
+                                const printWindow = window.open(`${$el.href}?${query.toString()}`, '_blank', 'noopener');
+
+                                if (printWindow) {
+                                    deselectAllRecords();
+                                }
+                                JS,
+                        ]),
                 ]),
             ])
             // Order còn hoạt động dùng chung một nhóm; ngày giao gần hôm nay nhất đứng trước.
