@@ -25,7 +25,7 @@
 
 <div
     x-data="{ activeTab: 'info' }"
-    class="order-view-modal h-[85] lg:h-[70vh] overflow-hidden text-slate-900"
+    class="order-view-modal h-[85dvh] lg:h-[70vh] overflow-hidden text-slate-900"
 >
     {{-- Mobile và desktop dùng chung dữ liệu Order nhưng có thể phát triển giao diện độc lập. --}}
     <div class="h-full lg:hidden">
