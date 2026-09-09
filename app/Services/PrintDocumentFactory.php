@@ -104,7 +104,7 @@ class PrintDocumentFactory
             'secondary_date' => $payment?->payment_date,
             'employee' => $payment?->confirmer?->name ?? $release->creator?->name,
             'customer' => $this->customerData($release->customerStock?->customer),
-            'info_heading' => 'THÔNG TIN PHIẾU THU',
+            'info_heading' => 'THÔNG TIN PHIẾU XUẤT',
             'document_type' => "Phiếu xuất {$release->release_code}",
             'payment_status' => $payment
                 ? StatusApp::label('payment.status', $payment->status)
@@ -138,7 +138,7 @@ class PrintDocumentFactory
             'shipping_fee' => (float) $release->allocated_shipping_fee,
             'adjustment' => (float) $release->reconciliation_adjustment,
             'total' => (float) ($payment?->amount ?? $release->total_amount),
-            'total_label' => $payment ? 'TỔNG ĐÃ THU' : 'TỔNG PHẢI THU',
+            'total_label' => $payment ? 'TỔNG THU' : 'TỔNG THU',
         ];
     }
 
