@@ -2,7 +2,7 @@
     {{-- Payment chỉ được tạo khi người dùng xác nhận phiếu xuất tương ứng. --}}
     <div class="overflow-auto inventory-modal-scroll h22vh">
         <table class="w-full min-w-[900px] border-collapse">
-            <thead class="bg-slate-100/90">
+            <thead class="sticky top-0 z-20 bg-slate-100/90">
                 <tr>
                     <th class="w-12 px-3 py-4"><span class="sr-only">Mở rộng</span></th>
                     <th class="px-5 py-4 text-left text-sm font-semibold text-slate-600">STT</th>
@@ -12,7 +12,7 @@
                     <th class="px-5 py-4 text-right text-sm font-semibold text-slate-600">SL xuất</th>
                     <th class="px-5 py-4 text-left text-sm font-semibold text-slate-600">Ngày thu</th>
                     <th class="px-5 py-4 text-left text-sm font-semibold text-slate-600">Người thu</th>
-                    <th class="sticky right-0 z-10 bg-slate-100 px-5 py-4 text-center text-sm font-semibold text-slate-600 shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.45)]">Thao tác</th>
+                    <th class="sticky right-0 z-30 bg-slate-100 px-5 py-4 text-center text-sm font-semibold text-slate-600 shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.45)]">Thao tác</th>
                 </tr>
             </thead>
 
