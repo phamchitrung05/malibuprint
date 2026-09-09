@@ -585,7 +585,7 @@
             grid-template-columns: 1fr 1.5fr 1.08fr;
             gap: 3mm;
             margin-top: 4mm;
-            height: 36mm;
+            height: 43mm;
         }
 
         .bottom-box {
@@ -1028,7 +1028,7 @@
                     <div class="info-row">
                         <span class="info-label">Ghi chú</span>
                         <span>:</span>
-                        <span class="order-note font-bold">{{ $document['note'] ?: '—' }}</span>
+                        <span class="order-note order-meta-label">{{ $document['note'] ?: '—' }}</span>
                     </div>
 
                 </div>
