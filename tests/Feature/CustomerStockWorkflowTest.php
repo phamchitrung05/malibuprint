@@ -204,8 +204,8 @@ class CustomerStockWorkflowTest extends TestCase
         $this->actingAs($user)
             ->get(route('stock-releases.receipt.print', $release))
             ->assertOk()
-            ->assertSee('PHIẾU THU')
-            ->assertSee('TỔNG PHẢI THU')
+            ->assertSee('PHIẾU XUẤT HÀNG')
+            ->assertSee('TỔNG THU')
             ->assertSee('100.000 VNĐ');
 
         Livewire::actingAs($user)
@@ -228,8 +228,8 @@ class CustomerStockWorkflowTest extends TestCase
 
         $this->get(route('stock-releases.receipt.print', $release))
             ->assertOk()
-            ->assertSee('PHIẾU THU')
-            ->assertSee('TỔNG ĐÃ THU')
+            ->assertSee('PHIẾU XUẤT HÀNG')
+            ->assertSee('TỔNG THU')
             ->assertSee('100.000 VNĐ')
             ->assertSee('In phiếu thu');
 

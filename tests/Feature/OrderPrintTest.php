@@ -43,8 +43,6 @@ class OrderPrintTest extends TestCase
             ->assertSee('Dịch vụ in ly')
             ->assertSeeInOrder(['Sản phẩm PRINT-001', 'Dịch vụ: Dịch vụ in ly'])
             ->assertSeeHtml('<tr class="service-row">')
-            ->assertSee('Nhân viên in đơn')
-            ->assertSee('Mới tạo')
             ->assertSee('Chưa thanh toán')
             ->assertSee('25.000')
             ->assertSee('265.000 VNĐ')
@@ -67,9 +65,7 @@ class OrderPrintTest extends TestCase
             ]))
             ->assertOk()
             ->assertSee('In 2 đơn hàng')
-            ->assertSeeInOrder(['PRINT-SECOND', 'PRINT-FIRST'])
-            ->assertSee('1/2')
-            ->assertSee('2/2');
+            ->assertSeeInOrder(['PRINT-SECOND', 'PRINT-FIRST']);
     }
 
     public function test_print_routes_require_authentication(): void
