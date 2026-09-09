@@ -53,7 +53,7 @@
 
 @media (max-width: 640px) {
     .order-view-modal-window {
-        height: calc(100dvh - 1rem);
+        height: calc(100dvh - 2rem);
         max-height: calc(100dvh - 1rem);
     }
 }

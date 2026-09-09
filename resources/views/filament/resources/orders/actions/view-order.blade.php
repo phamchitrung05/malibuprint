@@ -25,8 +25,14 @@
 
 <div
     x-data="{ activeTab: 'info' }"
-    class="order-view-modal flex h-[70vh] min-h-0 flex-col overflow-hidden text-slate-900"
+    class="order-view-modal h-[85] lg:h-[70vh] overflow-hidden text-slate-900"
 >
+    {{-- Mobile và desktop dùng chung dữ liệu Order nhưng có thể phát triển giao diện độc lập. --}}
+    <div class="h-full lg:hidden">
+        @include('filament.resources.orders.actions.mobile.view-order')
+    </div>
+
+    <div class="hidden h-full min-h-0 flex-col overflow-hidden lg:flex">
     {{-- Header và tiến trình là thông tin chung nên luôn hiển thị khi chuyển tab. --}}
     <header class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">
         <div class="min-w-0">
@@ -175,4 +181,5 @@
             </div>
         @endforeach
     </main>
+    </div>
 </div>
