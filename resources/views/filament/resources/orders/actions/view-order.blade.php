@@ -25,7 +25,7 @@
 
 <div
     x-data="{ activeTab: 'info' }"
-    class="order-view-modal flex h-full min-h-0 flex-col overflow-hidden text-slate-900"
+    class="order-view-modal flex h-[70vh] min-h-0 flex-col overflow-hidden text-slate-900"
 >
     {{-- Header và tiến trình là thông tin chung nên luôn hiển thị khi chuyển tab. --}}
     <header class="flex shrink-0 items-center justify-between border-b border-slate-200 px-6 py-4">

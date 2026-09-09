@@ -198,7 +198,7 @@ class OrderForm
                                         // Dữ liệu cũ có thể chưa có ngày dự kiến; chỉ bắt buộc với Order tạo mới.
                                         ->required(fn (string $operation): bool => $operation === 'create')
                                         ->columnSpanFull(),
-                                    Textarea::make('order_note')
+                                    Textarea::make('note')
                                         ->label('Ghi chú đơn hàng')
                                         ->placeholder('Nhập ghi chú đơn hàng...')
                                         ->rows(3)
