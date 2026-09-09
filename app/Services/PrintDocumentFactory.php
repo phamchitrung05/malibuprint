@@ -96,7 +96,7 @@ class PrintDocumentFactory
         return [
             'browser_title' => "Phiếu thu {$release->release_code}",
             'print_button_label' => 'In phiếu thu',
-            'document_title' => 'PHIẾU THU',
+            'document_title' => 'PHIẾU XUẤT HÀNG',
             'code' => $release->release_code,
             'date_label' => 'Ngày xuất kho',
             'date' => $release->released_at,
