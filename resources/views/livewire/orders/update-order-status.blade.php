@@ -11,7 +11,7 @@
     };
 @endphp
 
-<div class="space-y-4 text-left order-view-modal min-h-0 flex flex-col h-[70vh] overflow-y-auto bg-slate-50/60 p-5">
+<div class="space-y-4 text-left order-view-modal min-h-0 flex flex-col h-[80vh] lg:h-[70vh] overflow-y-auto bg-slate-50/60">
     <section class="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>

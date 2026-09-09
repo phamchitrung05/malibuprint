@@ -22,6 +22,16 @@
     display: none;
 }
 
+/* Mobile vẫn hỗ trợ vuốt dọc/ngang nhưng không hiển thị rãnh scrollbar. */
+.mobile-order-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.mobile-order-scroll::-webkit-scrollbar {
+    display: none;
+}
+
 /* Modal không vượt viewport; chỉ vùng nội dung tab được phép cuộn bên trong cửa sổ. */
 .order-view-modal-window {
     --modal-max-h: 750px;   /* chiều cao tối đa "list thường" */

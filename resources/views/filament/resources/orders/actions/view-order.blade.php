@@ -46,9 +46,9 @@
                 </span>
             </div>
             <p class="mt-1 text-sm text-slate-500">
-                Tạo ngày {{ $order->order_date?->format('d/m/Y H:i') ?? '--/--' }}
+                Tạo ngày {{ $order->order_date?->format('d/m/Y') ?? '--/--' }}
                 <span class="mx-2">•</span>
-                Cập nhật lần cuối {{ $order->updated_at?->format('d/m/Y H:i') ?? '--/--' }}
+                Cập nhật lần cuối {{ $order->updated_at?->format('d/m/Y') ?? '--/--' }}
             </p>
         </div>
 
