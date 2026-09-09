@@ -138,7 +138,7 @@ class PrintDocumentFactory
             'shipping_fee' => (float) $release->allocated_shipping_fee,
             'adjustment' => (float) $release->reconciliation_adjustment,
             'total' => (float) ($payment?->amount ?? $release->total_amount),
-            'total_label' => 'TỔNG ĐÃ THU',
+            'total_label' => $payment ? 'TỔNG ĐÃ THU' : 'TỔNG PHẢI THU',
         ];
     }
 

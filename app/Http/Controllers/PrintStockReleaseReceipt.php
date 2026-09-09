@@ -10,7 +10,7 @@ class PrintStockReleaseReceipt extends Controller
 {
     public function __invoke(StockRelease $stockRelease, PrintDocumentFactory $factory): View
     {
-        // Phiếu thu chỉ tồn tại sau khi admin xác nhận Payment; không cho in chứng từ chưa thu tiền.
+        // Payment có thể chưa tồn tại khi người dùng in trước; factory sẽ dùng dữ liệu phiếu xuất làm fallback.
         $stockRelease->load([
             'customerStock.customer',
             'customerStock.order',
@@ -18,8 +18,6 @@ class PrintStockReleaseReceipt extends Controller
             'items.services',
             'payment.confirmer',
         ]);
-
-        abort_if($stockRelease->payment === null, 404);
 
         return view('print.stock-release-receipt', [
             'documents' => collect([$factory->forStockRelease($stockRelease)]),

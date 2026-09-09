@@ -21,7 +21,7 @@
                 <th class="px-3 py-3 text-right">SL</th>
                 <th class="px-3 py-3 text-right">Đơn giá</th>
                 <th class="px-3 py-3">Dịch vụ</th>
-                <th class="px-5 py-3 text-right">Tiền sản phẩm</th>
+                <th class="px-5 py-3 text-right">Thành tiền</th>
             </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -55,7 +55,9 @@
                             <span class="text-slate-400">Không có</span>
                         @endforelse
                     </td>
-                    <td class="px-5 py-4 text-right font-semibold text-slate-800">{{ number_format((float) $item->subtotal, 0, ',', '.') }}đ</td>
+                    <td class="px-5 py-4 text-right font-semibold text-slate-800">
+                        {{ number_format((float) $item->subtotal + $item->services->sum(fn ($service): float => (float) $service->subtotal), 0, ',', '.') }}đ
+                    </td>
                 </tr>
             @empty
                 <tr>

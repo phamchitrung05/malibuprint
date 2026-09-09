@@ -91,28 +91,16 @@
                                     </button>
                                 @endif
 
-                                @if ($payment)
-                                    <a
-                                        href="{{ route('stock-releases.receipt.print', $release) }}"
-                                        target="_blank"
-                                        rel="noopener"
-                                        title="In phiếu thu"
-                                        class="inline-flex size-9 items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-700"
-                                    >
-                                        <x-heroicon-o-printer class="size-4"/>
-                                        <span class="sr-only">In phiếu thu</span>
-                                    </a>
-                                @else
-                                    <button
-                                        type="button"
-                                        title="Xác nhận phiếu trước khi in"
-                                        disabled
-                                        class="inline-flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-400"
-                                    >
-                                        <x-heroicon-o-printer class="size-4"/>
-                                        <span class="sr-only">Chưa thể in</span>
-                                    </button>
-                                @endif
+                                <a
+                                    href="{{ route('stock-releases.receipt.print', $release) }}"
+                                    target="_blank"
+                                    rel="noopener"
+                                    title="In phiếu thu"
+                                    class="inline-flex size-9 items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-700"
+                                >
+                                    <x-heroicon-o-printer class="size-4"/>
+                                    <span class="sr-only">In phiếu thu</span>
+                                </a>
                             </div>
                         </td>
                     </tr>

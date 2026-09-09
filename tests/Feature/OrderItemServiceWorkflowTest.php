@@ -107,8 +107,10 @@ class OrderItemServiceWorkflowTest extends TestCase
 
         $order->load(['items.productSku.product', 'items.services.service']);
         $this->view('filament.resources.orders.actions.tabs.products', ['order' => $order])
+            ->assertSee('Thành tiền')
             ->assertSee('Dịch vụ in ly')
-            ->assertSee('340.000đ');
+            ->assertSee('340.000đ')
+            ->assertSee('360.000đ');
         $this->view('filament.resources.orders.actions.tabs.info', ['order' => $order])
             ->assertSee('Tiền dịch vụ')
             ->assertSee('340.000đ');
