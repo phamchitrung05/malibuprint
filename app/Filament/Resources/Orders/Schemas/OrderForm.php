@@ -202,7 +202,6 @@ class OrderForm
                                         ->label('Ghi chú đơn hàng')
                                         ->placeholder('Nhập ghi chú đơn hàng...')
                                         ->rows(3)
-                                        ->dehydrated(false)
                                         ->columnSpanFull(),
                                 ]),
                             Section::make('Tệp đã liên kết')

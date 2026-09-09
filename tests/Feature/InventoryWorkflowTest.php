@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\FulfillmentMode;
 use App\Filament\Pages\ProductInventory;
 use App\Filament\Resources\Orders\Pages\CreateOrder;
+use App\Filament\Resources\Orders\Pages\EditOrder;
 use App\Livewire\CustomerStocks\ReleaseCustomerStock;
 use App\Livewire\Orders\UpdateOrderStatus;
 use App\Models\Customer;
@@ -26,7 +27,7 @@ class InventoryWorkflowTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_filament_create_order_allocates_inventory_in_same_workflow(): void
+    public function test_filament_create_and_edit_order_persist_note_and_allocate_inventory(): void
     {
         $user = User::factory()->create();
         $customer = Customer::query()->create([
@@ -49,6 +50,7 @@ class InventoryWorkflowTest extends TestCase
                 'customer_id' => $customer->id,
                 'fulfillment_mode' => FulfillmentMode::Single->value,
                 'delivery_date' => now()->addDay()->toDateString(),
+                'note' => 'Ghi chú khi tạo đơn',
                 'items' => [[
                     'product_id' => $product->id,
                     'product_sku_id' => $sku->id,
@@ -66,6 +68,15 @@ class InventoryWorkflowTest extends TestCase
 
         $this->assertSame(38, $sku->refresh()->stock);
         $this->assertSame(12, $order->inventoryAllocations()->sole()->quantity);
+        $this->assertSame('Ghi chú khi tạo đơn', $order->note);
+
+        Livewire::actingAs($user)
+            ->test(EditOrder::class, ['record' => $order->getRouteKey()])
+            ->fillForm(['note' => 'Ghi chú sau khi cập nhật'])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('Ghi chú sau khi cập nhật', $order->refresh()->note);
     }
 
     public function test_order_form_selects_first_available_sku_and_hides_products_without_remaining_skus(): void
