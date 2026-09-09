@@ -138,7 +138,7 @@ class OrdersTable
                         'order' => $record,
                     ]))
                     ->modalWidth('2xl')
-                    ->extraModalWindowAttributes(['class' => 'order-view-modal-window s700'])
+                    ->extraModalWindowAttributes(['class' => 'order-view-modal-window s780'])
                      // Component Livewire có nút lưu riêng nên ẩn submit mặc định của Filament action.
                     ->modalSubmitAction(false),
                 Action::make('customerStock')

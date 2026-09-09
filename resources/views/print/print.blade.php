@@ -262,7 +262,7 @@
 
         .brand-name {
             margin-top: -1mm;
-            font-size: 7mm;
+            font-size: 8.05mm;
             line-height: 1;
             font-weight: 800;
             letter-spacing: -0.4mm;
@@ -279,7 +279,7 @@
         .brand-subtitle {
             margin-top: 2mm;
             color: #f45116;
-            font-size: 2.1mm;
+            font-size: 2.415mm;
             font-weight: 600;
             letter-spacing: 1.3mm;
         }
@@ -289,7 +289,7 @@
             flex-direction: column;
             gap: 3.5mm;
             color: #222;
-            font-size: 2.8mm;
+            font-size: 3.22mm;
         }
 
         .contact-row {
@@ -315,7 +315,7 @@
         }
 
         .order-title {
-            font-size: 7mm;
+            font-size: 8.05mm;
             line-height: 1;
             font-weight: 800;
             color: #f45116;
@@ -328,7 +328,7 @@
             border-radius: 1.5mm;
             background: #0879d1;
             color: #fff;
-            font-size: 3.1mm;
+            font-size: 3.565mm;
             font-weight: 700;
             letter-spacing: .1mm;
             margin-bottom: 4mm;
@@ -344,7 +344,7 @@
             display: grid;
             grid-template-columns: 7mm 31mm 4mm 1fr;
             align-items: center;
-            font-size: 2.8mm;
+            font-size: 3.22mm;
         }
 
         .order-meta-icon {
@@ -365,7 +365,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 6mm;
-            height: 43mm;
+            height: 40mm;
         }
 
         .info-box {
@@ -403,7 +403,7 @@
             padding: 1.6mm 3mm;
             border-radius: 1.5mm;
             color: #fff;
-            font-size: 3.1mm;
+            font-size: 3.565mm;
             font-weight: 700;
         }
 
@@ -424,7 +424,7 @@
             display: flex;
             flex-direction: column;
             gap: 2.4mm;
-            font-size: 2.7mm;
+            font-size: 3.55mm;
         }
 
         .info-row {
@@ -439,6 +439,10 @@
         .status {
             color: #f45116;
             font-weight: 700;
+        }
+
+        .order-note {
+            font-size: 0.8625rem;
         }
 
         /* =========================================
@@ -466,7 +470,7 @@
         th {
             height: 9mm;
             padding: 1mm;
-            font-size: 2.8mm;
+            font-size: 3.22mm;
             font-weight: 700;
             border-right: .2mm solid rgba(255,255,255,.45);
         }
@@ -481,7 +485,7 @@
             border-right: .2mm solid #d9dee5;
             border-bottom: .2mm solid #d9dee5;
             vertical-align: middle;
-            font-size: 2.55mm;
+            font-size: 3.5mm;
         }
 
         tr:last-child td {
@@ -539,7 +543,7 @@
 
         .product-name {
             font-weight: 700;
-            font-size: 2.7mm;
+            font-size: 3.105mm;
         }
 
         .service-row {
@@ -553,7 +557,7 @@
 
         .service-name {
             color: #0879d1;
-            font-size: 2.5mm;
+            font-size: 2.875mm;
             font-weight: 700;
         }
 
@@ -608,7 +612,7 @@
             display: flex;
             align-items: center;
             gap: 2mm;
-            font-size: 3mm;
+            font-size: 3.45mm;
             font-weight: 700;
             margin-bottom: 2.5mm;
         }
@@ -631,7 +635,7 @@
             display: flex;
             flex-direction: column;
             gap: 1.8mm;
-            font-size: 2.15mm;
+            font-size: 2.8mm;
             line-height: 1.35;
         }
 
@@ -663,7 +667,7 @@
         }
 
         .payment-details {
-            font-size: 2.15mm;
+            font-size: 2.8mm;
             line-height: 1.8;
         }
 
@@ -676,7 +680,7 @@
             display: flex;
             justify-content: space-between;
             padding: 2.2mm 3mm 0;
-            font-size: 2.3mm;
+            font-size: 3.5mm;
         }
 
         .summary-total {
@@ -688,19 +692,19 @@
         }
 
         .summary-total-label {
-            font-size: 2.5mm;
+            font-size: 2.875mm;
             font-weight: 700;
         }
 
         .summary-total-price {
-            font-size: 5.5mm;
+            font-size: 6.325mm;
             font-weight: 800;
             margin-top: .5mm;
         }
 
         .summary-words {
             text-align: center;
-            font-size: 2.15mm;
+            font-size: 2.4725mm;
             padding: 1.5mm;
         }
 
@@ -734,7 +738,7 @@
             justify-content: center;
             align-items: center;
             gap: 2mm;
-            font-size: 2.9mm;
+            font-size: 3.335mm;
             font-weight: 700;
         }
 
@@ -756,7 +760,7 @@
         }
 
         .signature-note {
-            font-size: 2.2mm;
+            font-size: 2.53mm;
             margin-top: .5mm;
         }
 
@@ -767,7 +771,7 @@
         }
 
         .signature-date {
-            font-size: 2.15mm;
+            font-size: 2.4725mm;
         }
 
         .print-button {
@@ -784,7 +788,7 @@
             background: #0879d1;
             color: #fff;
             font-family: inherit;
-            font-size: 14px;
+            font-size: 16.1px;
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
@@ -983,7 +987,7 @@
                     <div class="info-row">
                         <span class="info-label">Địa chỉ</span>
                         <span>:</span>
-                        <span>{{ $customer['address'] ?? '—' }}</span>
+                        <span class="order-meta-label">{{ $customer['address'] ?? '—' }}</span>
                     </div>
 
                     <div class="info-row">
@@ -1024,7 +1028,7 @@
                     <div class="info-row">
                         <span class="info-label">Ghi chú</span>
                         <span>:</span>
-                        <span class="text-xs font-bold">{{ $document['note'] ?: '—' }}</span>
+                        <span class="order-note font-bold">{{ $document['note'] ?: '—' }}</span>
                     </div>
 
                 </div>
@@ -1037,86 +1041,87 @@
         <!-- ================================
              PRODUCT TABLE
         ================================= -->
+        <div>
+            <section class="product-table-wrap">
 
-        <section class="product-table-wrap">
+                <table>
 
-            <table>
-
-                <thead>
-                <tr>
-                    <th class="col-stt">STT</th>
-                    <th class="col-product">TÊN SẢN PHẨM</th>
-                    <th class="col-description">QUY CÁCH / MÔ TẢ</th>
-                    <th class="col-quantity">SỐ LƯỢNG</th>
-                    <th class="col-price">ĐƠN GIÁ</th>
-                    <th class="col-total">THÀNH TIỀN</th>
-                </tr>
-                </thead>
-
-                <tbody>
-                @forelse ($document['items'] as $item)
+                    <thead>
                     <tr>
-                        <td class="col-stt">{{ $loop->iteration }}</td>
+                        <th class="col-stt">STT</th>
+                        <th class="col-product">TÊN SẢN PHẨM</th>
+                        <th class="col-description">QUY CÁCH / MÔ TẢ</th>
+                        <th class="col-quantity">SỐ LƯỢNG</th>
+                        <th class="col-price">ĐƠN GIÁ</th>
+                        <th class="col-total">THÀNH TIỀN</th>
+                    </tr>
+                    </thead>
 
-                        <td class="col-product">
-                            <div class="product-cell">
+                    <tbody>
+                    @forelse ($document['items'] as $item)
+                        <tr>
+                            <td class="col-stt">{{ $loop->iteration }}</td>
+
+                            <td class="col-product">
+                                <div class="product-cell">
                                 <span class="product-name">
                                     {{ $item['name'] }}
                                 </span>
-                            </div>
-                        </td>
-
-                        <td class="description">
-                            @forelse ($item['description'] as $description)
-                                <div>{{ $description }}</div>
-                            @empty
-                                <div>—</div>
-                            @endforelse
-                        </td>
-
-                        <td class="col-quantity">
-                            {{ number_format($item['quantity'], 0, ',', '.') }}
-                            {{ $item['unit'] }}
-                        </td>
-
-                        <td class="col-price money">
-                            {{ number_format($item['unit_price'], 0, ',', '.') }}
-                        </td>
-
-                        <td class="col-total total-money">
-                            {{ number_format($item['total'], 0, ',', '.') }}
-                        </td>
-                    </tr>
-                    @foreach ($item['services'] as $service)
-                        <tr class="service-row">
-                            <td class="col-stt"></td>
-                            <td class="col-product">
-                                <span class="service-name">Dịch vụ: {{ $service['name'] }}</span>
+                                </div>
                             </td>
-                            <td class="description">Dịch vụ đi kèm sản phẩm</td>
+
+                            <td class="description">
+                                @forelse ($item['description'] as $description)
+                                    <div>{{ $description }}</div>
+                                @empty
+                                    <div>—</div>
+                                @endforelse
+                            </td>
+
                             <td class="col-quantity">
-                                {{ number_format($service['quantity'], 0, ',', '.') }}
+                                {{ number_format($item['quantity'], 0, ',', '.') }}
+                                {{ $item['unit'] }}
                             </td>
+
                             <td class="col-price money">
-                                {{ number_format($service['unit_price'], 0, ',', '.') }}
+                                {{ number_format($item['unit_price'], 0, ',', '.') }}
                             </td>
+
                             <td class="col-total total-money">
-                                {{ number_format($service['total'], 0, ',', '.') }}
+                                {{ number_format($item['total'], 0, ',', '.') }}
                             </td>
                         </tr>
-                    @endforeach
-                @empty
-                    <tr>
-                        <td colspan="6" style="text-align: center;">
-                            Đơn hàng chưa có sản phẩm.
-                        </td>
-                    </tr>
-                @endforelse
-                </tbody>
+                        @foreach ($item['services'] as $service)
+                            <tr class="service-row">
+                                <td class="col-stt"></td>
+                                <td class="col-product">
+                                    <span class="service-name">Dịch vụ: {{ $service['name'] }}</span>
+                                </td>
+                                <td class="description">Dịch vụ đi kèm sản phẩm</td>
+                                <td class="col-quantity">
+                                    {{ number_format($service['quantity'], 0, ',', '.') }}
+                                </td>
+                                <td class="col-price money">
+                                    {{ number_format($service['unit_price'], 0, ',', '.') }}
+                                </td>
+                                <td class="col-total total-money">
+                                    {{ number_format($service['total'], 0, ',', '.') }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="6" style="text-align: center;">
+                                Đơn hàng chưa có sản phẩm.
+                            </td>
+                        </tr>
+                    @endforelse
+                    </tbody>
 
-            </table>
+                </table>
 
-        </section>
+            </section>
+        </div>
 
 
         <!-- ================================
