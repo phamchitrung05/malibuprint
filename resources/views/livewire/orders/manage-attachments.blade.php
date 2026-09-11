@@ -20,7 +20,7 @@
                             </a>
                         @endif
                         @if ($file->web_content_link)
-                            <a href="{{ $file->web_content_link }}" target="_blank" rel="noopener" title="Tải xuống" aria-label="Tải xuống" class="flex size-8 items-center justify-center rounded-lg border border-blue-200 text-blue-600 transition hover:bg-blue-50">
+                            <a href="{{ $file->web_content_link }}" title="Tải xuống" aria-label="Tải xuống" class="flex size-8 items-center justify-center rounded-lg border border-blue-200 text-blue-600 transition hover:bg-blue-50">
                                 <x-heroicon-o-arrow-down-tray class="size-4" />
                             </a>
                         @endif
