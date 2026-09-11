@@ -19,11 +19,6 @@
                                 {{ $file->status === \App\Support\StatusApp::value('managed_file.status', 'ready') ? 'Xem' : 'Tải xuống' }}
                             </a>
                         @endif
-                        @if ($file->web_content_link)
-                            <a href="{{ $file->web_content_link }}" title="Tải xuống" aria-label="Tải xuống" class="flex size-8 items-center justify-center rounded-lg border border-blue-200 text-blue-600 transition hover:bg-blue-50">
-                                <x-heroicon-o-arrow-down-tray class="size-4" />
-                            </a>
-                        @endif
                         @if ($file->status === \App\Support\StatusApp::value('managed_file.status', 'failed') && $file->temporary_path)
                             <button type="button" wire:click="retryUpload({{ $file->id }})" class="rounded-lg border border-amber-200 px-3 py-1.5 text-xs font-semibold text-amber-600">Thử lại</button>
                         @endif
