@@ -153,6 +153,7 @@ class AttachmentManagementTest extends TestCase
             'path' => '2026/09/linked.pdf',
             'size' => 100,
             'status' => StatusApp::value('managed_file.status', 'ready'),
+            'web_content_link' => 'https://drive.google.com/uc?id=linked-file&export=download',
         ]);
         ManagedFile::create([
             'uuid' => (string) Str::uuid(),
@@ -171,6 +172,8 @@ class AttachmentManagementTest extends TestCase
                 'attachableId' => $order->id,
             ])
             ->assertSee('file-thuoc-order.pdf')
+            ->assertSeeHtml('href="https://drive.google.com/uc?id=linked-file&amp;export=download"')
+            ->assertSeeHtml('aria-label="Tải xuống"')
             ->assertSee('Xác nhận gỡ file')
             ->assertSee('Gỡ liên kết')
             ->assertDontSee('wire:confirm', false)
