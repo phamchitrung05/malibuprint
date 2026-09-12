@@ -1,4 +1,19 @@
-<section class="rounded-xl border border-slate-200 bg-white">
+@php
+    $showShippingMethod = $order->fulfillment_mode === \App\Enums\FulfillmentMode::Single
+        && (! $order->is_delivered || $order->shipping_method === \App\Enums\ShippingMethod::BestExpress);
+@endphp
+
+@if ($showShippingMethod)
+    <livewire:orders.update-shipping-method
+        :order-id="$order->id"
+        :key="'update-shipping-method-'.(($isMobile ?? false) ? 'mobile-' : 'desktop-').$order->id"
+    />
+@endif
+
+<section @class([
+    'rounded-xl border border-slate-200 bg-white',
+    'mt-4' => $showShippingMethod,
+])>
     <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
         <div class="flex items-center gap-2">
             <div class="flex size-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">

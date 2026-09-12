@@ -175,7 +175,7 @@
                             :key="'mobile-view-order-attachments-'.$order->id"
                         />
                     @else
-                        @include('filament.resources.orders.actions.tabs.'.$tabKey)
+                        @include('filament.resources.orders.actions.tabs.'.$tabKey, ['isMobile' => true])
                     @endif
                 </section>
             @endforeach

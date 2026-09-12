@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\FulfillmentMode;
 use App\Enums\FulfillmentStatus;
+use App\Enums\ShippingMethod;
 use App\Support\StatusApp;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,8 @@ class Order extends Model
         'subtotal',
         'discount',
         'shipping_fee',
+        'shipping_method',
+        'shipping_tracking_code',
         'total_amount',
         'note',
         'created_by',
@@ -46,6 +49,7 @@ class Order extends Model
             'subtotal' => 'decimal:2',
             'discount' => 'decimal:2',
             'shipping_fee' => 'decimal:2',
+            'shipping_method' => ShippingMethod::class,
             'total_amount' => 'decimal:2',
             'is_delivered' => 'boolean',
             'is_paid' => 'boolean',
@@ -59,6 +63,7 @@ class Order extends Model
             $order->status ??= StatusApp::default('order.status');
             $order->fulfillment_mode ??= StatusApp::default('order.fulfillment_mode');
             $order->fulfillment_status ??= StatusApp::default('order.fulfillment_status');
+            $order->shipping_method ??= StatusApp::default('order.shipping_method');
         });
     }
 

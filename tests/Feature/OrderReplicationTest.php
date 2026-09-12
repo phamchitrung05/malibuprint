@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\FulfillmentMode;
+use App\Enums\ShippingMethod;
 use App\Filament\Resources\Orders\Pages\ListOrders;
 use App\Models\Customer;
 use App\Models\Order;
@@ -46,6 +47,8 @@ class OrderReplicationTest extends TestCase
         $this->assertNull($newOrder->closed_at);
         $this->assertSame($sourceOrder->discount, $newOrder->discount);
         $this->assertSame($sourceOrder->shipping_fee, $newOrder->shipping_fee);
+        $this->assertSame(ShippingMethod::Standard, $newOrder->shipping_method);
+        $this->assertNull($newOrder->shipping_tracking_code);
         $this->assertSame($sourceOrder->total_amount, $newOrder->total_amount);
         $this->assertSame($sourceItem->product_sku_id, $newItem->product_sku_id);
         $this->assertSame($sourceItem->quantity, $newItem->quantity);

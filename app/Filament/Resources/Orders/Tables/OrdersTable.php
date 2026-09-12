@@ -16,6 +16,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\Indicator;
 use Filament\Tables\Filters\SelectFilter;
@@ -40,6 +41,9 @@ class OrdersTable
                         ? null
                         : self::deliveryDateDistance($record->delivery_date))
                     ->sortable(),
+                ViewColumn::make('shipping_method')
+                    ->label('Vận chuyển')
+                    ->view('filament.tables.columns.best-express-badge'),
                 TextColumn::make('status')
                     ->label('Trạng thái')
                     ->badge()

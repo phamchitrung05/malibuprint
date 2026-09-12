@@ -45,6 +45,8 @@ class OrderReplicator
                 'subtotal' => 0,
                 'discount' => $sourceOrder->discount,
                 'shipping_fee' => $sourceOrder->shipping_fee,
+                'shipping_method' => StatusApp::default('order.shipping_method'),
+                'shipping_tracking_code' => null,
                 'total_amount' => 0,
                 'note' => $sourceOrder->note,
                 'created_by' => $actorId,

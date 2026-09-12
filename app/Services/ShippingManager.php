@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\FulfillmentMode;
 use App\Enums\FulfillmentStatus;
+use App\Enums\ShippingMethod;
 use App\Models\Order;
 use App\Models\Shipping;
 use App\Support\StatusApp;
@@ -32,6 +33,13 @@ class ShippingManager
             if ($order->is_delivered) {
                 throw ValidationException::withMessages([
                     'shipping' => 'Order này đã được xác nhận giao hàng.',
+                ]);
+            }
+
+            if ($order->shipping_method === ShippingMethod::BestExpress
+                && blank($order->shipping_tracking_code)) {
+                throw ValidationException::withMessages([
+                    'shipping' => 'Vui lòng nhập mã vận đơn Best Express trước khi xác nhận giao hàng.',
                 ]);
             }
 

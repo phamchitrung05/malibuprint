@@ -177,7 +177,7 @@
     <main class="order-view-modal min-h-0 flex-1 max-h-[80vh] overflow-y-auto bg-slate-50/60 p-5">
         @foreach (array_keys($tabs) as $tabKey)
             <div x-show="activeTab === '{{ $tabKey }}'" x-cloak role="tabpanel">
-                @include('filament.resources.orders.actions.tabs.'.$tabKey)
+                @include('filament.resources.orders.actions.tabs.'.$tabKey, ['isMobile' => false])
             </div>
         @endforeach
     </main>

@@ -4,6 +4,7 @@ namespace Tests\Unit;
 
 use App\Enums\FulfillmentMode;
 use App\Enums\FulfillmentStatus;
+use App\Enums\ShippingMethod;
 use App\Support\StatusApp;
 use Tests\TestCase;
 
@@ -22,6 +23,10 @@ class StatusAppTest extends TestCase
         $this->assertSame(
             array_column(FulfillmentStatus::cases(), 'value'),
             array_keys(StatusApp::values('order.fulfillment_status')),
+        );
+        $this->assertSame(
+            array_column(ShippingMethod::cases(), 'value'),
+            array_keys(StatusApp::values('order.shipping_method')),
         );
         $this->assertSame(
             ['pending', 'completed', 'cancelled'],

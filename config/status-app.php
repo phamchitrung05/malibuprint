@@ -69,6 +69,13 @@ return [
                 'fully_released' => ['label' => 'Đã xuất hết', 'color' => 'success'],
             ],
         ],
+        'shipping_method' => [
+            'default' => 'standard',
+            'values' => [
+                'standard' => ['label' => 'Giao hàng thông thường'],
+                'best_express' => ['label' => 'Best Express'],
+            ],
+        ],
         'payment_summary' => [
             'values' => [
                 0 => ['label' => 'Chưa thanh toán', 'color' => 'warning'],
