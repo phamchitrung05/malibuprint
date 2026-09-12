@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ShippingMethod;
 use App\Filament\Resources\Orders\Pages\ListOrders;
 use App\Models\Customer;
 use App\Models\Order;
@@ -74,6 +75,33 @@ class OrderPrintTest extends TestCase
             ->assertOk()
             ->assertSee('In 2 đơn hàng')
             ->assertSeeInOrder(['PRINT-SECOND', 'PRINT-FIRST']);
+    }
+
+    public function test_printed_order_shows_tracking_code_only_for_best_express(): void
+    {
+        $user = User::factory()->create();
+        $bestExpressOrder = $this->createPrintableOrder($user, 'PRINT-BEST');
+        $bestExpressOrder->forceFill([
+            'shipping_method' => ShippingMethod::BestExpress,
+            'shipping_tracking_code' => 'BEST-PRINT-001',
+        ])->save();
+        $standardOrder = $this->createPrintableOrder($user, 'PRINT-STANDARD');
+
+        $this->actingAs($user)
+            ->get(route('orders.print', $bestExpressOrder))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'Ngày giao hàng dự kiến',
+                'BEST',
+                'EXPRESS',
+                'BEST-PRINT-001',
+            ])
+            ->assertSeeHtml('data-best-express-tracking');
+
+        $this->actingAs($user)
+            ->get(route('orders.print', $standardOrder))
+            ->assertOk()
+            ->assertDontSeeHtml('data-best-express-tracking');
     }
 
     public function test_print_routes_require_authentication(): void

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\FulfillmentMode;
+use App\Enums\ShippingMethod;
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\StockRelease;
@@ -37,6 +38,9 @@ class PrintDocumentFactory
             'date' => $order->order_date,
             'secondary_date_label' => 'Ngày giao hàng',
             'secondary_date' => $order->delivery_date,
+            'shipping_tracking_code' => $order->shipping_method === ShippingMethod::BestExpress
+                ? $order->shipping_tracking_code
+                : null,
             'employee' => $order->creator?->name,
             'customer' => $this->customerData($order->customer),
             'info_heading' => 'THÔNG TIN ĐƠN HÀNG',
@@ -102,6 +106,7 @@ class PrintDocumentFactory
             'date' => $release->released_at,
             'secondary_date_label' => 'Ngày thanh toán',
             'secondary_date' => $payment?->payment_date,
+            'shipping_tracking_code' => null,
             'employee' => $payment?->confirmer?->name ?? $release->creator?->name,
             'customer' => $this->customerData($release->customerStock?->customer),
             'info_heading' => 'THÔNG TIN PHIẾU XUẤT',

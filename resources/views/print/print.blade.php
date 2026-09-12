@@ -357,6 +357,34 @@
             font-weight: 600;
         }
 
+        .best-express-meta-row {
+            grid-template-columns: 38mm 4mm 1fr;
+        }
+
+        .best-express-logo {
+            display: inline-flex;
+            width: max-content;
+            overflow: hidden;
+            border-radius: .8mm;
+            color: #fff;
+            font-size: 2.6mm;
+            font-weight: 800;
+            line-height: 4.6mm;
+            letter-spacing: -.05mm;
+        }
+
+        .best-express-logo span {
+            padding: 0 1.5mm;
+        }
+
+        .best-express-logo .best {
+            background: #e31e24;
+        }
+
+        .best-express-logo .express {
+            background: #164194;
+        }
+
         /* =========================================
            INFORMATION BOXES
         ========================================= */
@@ -949,6 +977,16 @@
                         <span>:</span>
                         <span class="order-meta-label">{{ $document['secondary_date']?->format('d/m/Y') ?? '—' }}</span>
                     </div>
+
+                    @if (filled($document['shipping_tracking_code'] ?? null))
+                        <div class="order-meta-row best-express-meta-row" data-best-express-tracking>
+                            <span class="best-express-logo" aria-label="Best Express">
+                                <span class="best">BEST</span><span class="express">EXPRESS</span>
+                            </span>
+                            <span>:</span>
+                            <span class="order-meta-label">{{ $document['shipping_tracking_code'] }}</span>
+                        </div>
+                    @endif
 
                 </div>
             </div>
