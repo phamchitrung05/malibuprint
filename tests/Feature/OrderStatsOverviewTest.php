@@ -35,11 +35,13 @@ class OrderStatsOverviewTest extends TestCase
             'status' => 'completed',
             'is_delivered' => true,
             'is_paid' => false,
+            'total_amount' => 100000,
         ]);
         $this->createOrders(1, $customer->id, [
             'status' => 'completed',
             'is_delivered' => false,
             'is_paid' => false,
+            'total_amount' => 200000,
         ]);
 
         Livewire::actingAs($user)
@@ -51,7 +53,8 @@ class OrderStatsOverviewTest extends TestCase
             ->assertSeeInOrder(['Đơn mới tạo', '2'])
             ->assertSeeInOrder(['Đơn đang xử lý', '1'])
             ->assertSeeInOrder(['Hoàn thành chưa giao', '3'])
-            ->assertSeeInOrder(['Hoàn thành chưa thanh toán', '4']);
+            ->assertSeeInOrder(['Hoàn thành chưa thanh toán', '4'])
+            ->assertSee('500.000');
     }
 
     public function test_order_resource_registers_stats_overview_widget(): void

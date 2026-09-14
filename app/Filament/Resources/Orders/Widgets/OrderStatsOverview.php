@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Support\StatusApp;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Number;
 
 class OrderStatsOverview extends StatsOverviewWidget
 {
@@ -29,6 +30,10 @@ class OrderStatsOverview extends StatsOverviewWidget
                 StatusApp::value('order.status', 'completed'),
                 false,
             ])
+            ->selectRaw('SUM(CASE WHEN status = ? AND is_paid = ? THEN total_amount ELSE 0 END) AS awaiting_payment_total', [
+                StatusApp::value('order.status', 'completed'),
+                false,
+            ])
             ->first();
 
         return [
@@ -45,7 +50,7 @@ class OrderStatsOverview extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-m-truck')
                 ->color('warning'),
             Stat::make('Hoàn thành chưa thanh toán', (int) $counts->awaiting_payment_count)
-                ->description('Đơn đang chờ thanh toán')
+                ->description('Tổng: '.Number::currency((float) $counts->awaiting_payment_total, in: 'VND', locale: 'vi', precision: 0))
                 ->descriptionIcon('heroicon-m-credit-card')
                 ->color('danger'),
         ];
