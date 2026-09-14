@@ -30,6 +30,8 @@ class Order extends Model
         'shipping_fee',
         'shipping_method',
         'shipping_tracking_code',
+        'shipping_provider_id',
+        'driver_id',
         'total_amount',
         'note',
         'created_by',
@@ -75,6 +77,16 @@ class Order extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function shippingProvider(): BelongsTo
+    {
+        return $this->belongsTo(ShippingProvider::class);
+    }
+
+    public function driver(): BelongsTo
+    {
+        return $this->belongsTo(Driver::class);
     }
 
     public function items(): HasMany

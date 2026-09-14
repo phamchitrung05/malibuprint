@@ -31,6 +31,8 @@ class OrdersTable
     public static function configure(Table $table): Table
     {
         return $table
+            // Badge Best Express đọc relationship nên eager load một lần để tránh N+1 trên bảng Order.
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('shippingProvider'))
             ->columns([
                 TextColumn::make('order_code')->label('Mã đơn')->searchable()->sortable(),
                 TextColumn::make('customer.name')
@@ -40,7 +42,8 @@ class OrdersTable
                     ->html()
                     ->formatStateUsing(fn (string $state, Order $record): string => view('filament.tables.columns.customer-name', [
                         'name' => $state,
-                        'isBestExpress' => $record->shipping_method === ShippingMethod::BestExpress,
+                        'isBestExpress' => $record->shipping_method === ShippingMethod::Express
+                            && $record->shippingProvider?->name === 'Best Express',
                     ])->render()),
                 TextColumn::make('delivery_date')
                     ->label('Ngày dự kiến giao')
@@ -133,7 +136,7 @@ class OrdersTable
                     ->extraModalWindowAttributes(['class' => 'order-view-modal-window lg'])
                     ->modalContent(fn (Order $record) => view('filament.resources.orders.actions.view-order', [
                         // Nạp dữ liệu của tất cả tab một lần để việc chuyển tab không phát sinh query mới.
-                        'order' => $record->loadMissing(['customer', 'items.productSku.product', 'items.services.service', 'payments', 'shipping', 'activities.causer', 'attachments.managedFile']),
+                        'order' => $record->loadMissing(['customer', 'shippingProvider', 'driver', 'items.productSku.product', 'items.services.service', 'payments', 'shipping', 'activities.causer', 'attachments.managedFile']),
                     ])),
                 Action::make('updateStatus')
                     ->label('Cập nhật trạng thái')

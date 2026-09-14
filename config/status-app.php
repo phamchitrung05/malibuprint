@@ -70,10 +70,10 @@ return [
             ],
         ],
         'shipping_method' => [
-            'default' => 'standard',
+            'default' => 'vehicle',
             'values' => [
-                'standard' => ['label' => 'Giao hàng thông thường'],
-                'best_express' => ['label' => 'Best Express'],
+                'express' => ['label' => 'Gửi chuyển phát nhanh'],
+                'vehicle' => ['label' => 'Gửi hàng xe'],
             ],
         ],
         'payment_summary' => [

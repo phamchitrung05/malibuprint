@@ -21,6 +21,7 @@ class PrintDocumentFactory
         $order->loadMissing([
             'customer',
             'creator',
+            'shippingProvider',
             'items.productSku.product',
             'items.services',
         ]);
@@ -38,7 +39,8 @@ class PrintDocumentFactory
             'date' => $order->order_date,
             'secondary_date_label' => 'Ngày giao hàng',
             'secondary_date' => $order->delivery_date,
-            'shipping_tracking_code' => $order->shipping_method === ShippingMethod::BestExpress
+            'shipping_tracking_code' => $order->shipping_method === ShippingMethod::Express
+                && $order->shippingProvider?->name === 'Best Express'
                 ? $order->shipping_tracking_code
                 : null,
             'employee' => $order->creator?->name,

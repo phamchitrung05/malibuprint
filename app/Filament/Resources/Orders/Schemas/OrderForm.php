@@ -3,12 +3,15 @@
 namespace App\Filament\Resources\Orders\Schemas;
 
 use App\Enums\FulfillmentMode;
+use App\Enums\ShippingMethod;
 use App\Models\Customer;
+use App\Models\Driver;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductSku;
 use App\Models\Service;
+use App\Models\ShippingProvider;
 use App\Support\StatusApp;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -192,6 +195,53 @@ class OrderForm
                                         // Hình thức giao được chốt lúc tạo để không đổi nguồn tồn khi Order đang sản xuất.
                                         ->disabled(fn (string $operation): bool => $operation === 'edit')
                                         ->columnSpanFull(),
+                                    Select::make('shipping_method')
+                                        ->label('Phương thức vận chuyển')
+                                        ->options(collect(ShippingMethod::cases())
+                                            ->mapWithKeys(fn (ShippingMethod $method): array => [$method->value => $method->label()])
+                                            ->all())
+                                        // Chuyển phát nhanh là lựa chọn an toàn mặc định; mã vận đơn được kiểm tra lúc xác nhận giao.
+                                        ->default(ShippingMethod::Express->value)
+                                        ->live()
+                                        ->afterStateUpdated(function (?string $state, Set $set): void {
+                                            if ($state === ShippingMethod::Express->value) {
+                                                $set('driver_id', null);
+                                            } else {
+                                                $set('shipping_tracking_code', null);
+                                            }
+                                        })
+                                        ->required(),
+                                    Select::make('shipping_provider_id')
+                                        ->label('Đơn vị vận chuyển')
+                                        ->relationship('shippingProvider', 'name', modifyQueryUsing: fn (Builder $query): Builder => $query->where('is_active', true)->orderBy('name'))
+                                        ->searchable()
+                                        ->preload()
+                                        ->default(function (): ?int {
+                                            $providerId = ShippingProvider::query()
+                                                ->where('is_active', true)
+                                                ->where('name', 'Best Express')
+                                                ->value('id');
+
+                                            return $providerId === null ? null : (int) $providerId;
+                                        })
+                                        ->required(fn (string $operation): bool => $operation === 'create'),
+                                    TextInput::make('shipping_tracking_code')
+                                        ->label('Mã vận đơn')
+                                        ->maxLength(100)
+                                        ->visible(fn (Get $get): bool => $get('shipping_method') === ShippingMethod::Express->value)
+                                        ->required(fn (Get $get, string $operation): bool => $operation === 'create'
+                                            && $get('shipping_method') === ShippingMethod::Express->value),
+                                    Select::make('driver_id')
+                                        ->label('Tài xế')
+                                        ->relationship('driver', 'name', modifyQueryUsing: fn (Builder $query): Builder => $query->where('is_active', true)->orderBy('name'))
+                                        ->getOptionLabelFromRecordUsing(fn (Driver $driver): string => filled($driver->phone)
+                                            ? "{$driver->name} - {$driver->phone}"
+                                            : $driver->name)
+                                        ->searchable(['name', 'phone', 'license_plate'])
+                                        ->preload()
+                                        ->visible(fn (Get $get): bool => $get('shipping_method') === ShippingMethod::Vehicle->value)
+                                        ->required(fn (Get $get, string $operation): bool => $operation === 'create'
+                                            && $get('shipping_method') === ShippingMethod::Vehicle->value),
                                     DatePicker::make('delivery_date')
                                         ->label('Ngày dự kiến giao')
                                         ->default(now())

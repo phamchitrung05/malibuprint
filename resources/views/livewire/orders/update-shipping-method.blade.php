@@ -2,69 +2,87 @@
     <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
         <div class="flex min-w-0 items-center gap-2">
             <div class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                <x-heroicon-o-qr-code class="size-4" />
+                <x-heroicon-o-truck class="size-4" />
             </div>
-            <h3 class="truncate text-sm font-bold text-slate-900">Mã vận đơn</h3>
+            <h3 class="truncate text-sm font-bold text-slate-900">Phương thức vận chuyển</h3>
         </div>
-        @if ($isBestExpress)
-            <span class="shrink-0 rounded-md bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-600">Best Express</span>
-        @endif
+        <span class="shrink-0 rounded-md bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-600">
+            {{ \App\Support\StatusApp::label('order.shipping_method', $shippingMethod) }}
+        </span>
     </div>
 
-    <div class="p-5">
-        <div class="min-w-0">
-            <label for="shipping-tracking-code-{{ $orderId }}" class="block text-xs font-medium text-slate-600">
-                Mã vận đơn Best Express
-            </label>
-            <x-filament::input.wrapper
-                :disabled="! $canUpdate"
-                :valid="! $errors->has('trackingCode')"
-                class="mt-2 w-full"
-            >
-                <div class="flex min-w-0 items-stretch">
-                    <x-filament::input
-                        id="shipping-tracking-code-{{ $orderId }}"
-                        type="text"
-                        maxlength="100"
-                        wire:model="trackingCode"
-                        :disabled="! $canUpdate"
-                        placeholder="Nhập mã vận đơn"
-                        class="min-w-0 flex-1"
-                    />
-                    @if ($canUpdate)
-                        <button
-                            type="button"
-                            data-tracking-code-suffix
-                            wire:click="save"
-                            wire:loading.attr="disabled"
-                            wire:target="save"
-                            class="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-e-lg border-s border-primary-500 bg-primary-600 px-4 text-sm font-semibold text-white transition hover:bg-primary-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-300 disabled:cursor-not-allowed disabled:opacity-70"
-                        >
-                            <x-heroicon-o-check class="size-4" />
-                            <span wire:loading.remove wire:target="save">Lưu</span>
-                            <span wire:loading wire:target="save">Đang lưu...</span>
-                        </button>
-                    @endif
-                </div>
-            </x-filament::input.wrapper>
-            <p class="mt-2 text-xs text-slate-500">
-                Có mã vận đơn là Best Express; để trống và lưu để dùng giao hàng thông thường.
-            </p>
-            @error('trackingCode')
-                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-            @enderror
+    <div class="grid gap-4 p-5 md:grid-cols-2">
+        <label class="grid gap-2 text-xs font-medium text-slate-600">
+            Phương thức vận chuyển
+            <select wire:model.live="shippingMethod" @disabled(! $canUpdate) class="rounded-lg border-slate-300 text-sm">
+                @foreach (\App\Enums\ShippingMethod::cases() as $method)
+                    <option value="{{ $method->value }}">{{ $method->label() }}</option>
+                @endforeach
+            </select>
+        </label>
 
-            @error('shippingMethod')
-                <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
-            @enderror
-        </div>
+        <label class="grid gap-2 text-xs font-medium text-slate-600">
+            Đơn vị vận chuyển
+            <select wire:model="shippingProviderId" @disabled(! $canUpdate) class="rounded-lg border-slate-300 text-sm">
+                <option value="">Chọn đơn vị vận chuyển</option>
+                @foreach ($shippingProviders as $provider)
+                    <option value="{{ $provider->id }}">{{ $provider->name }}</option>
+                @endforeach
+            </select>
+            @error('shippingProviderId') <span class="text-red-600">{{ $message }}</span> @enderror
+        </label>
+
+        @if ($shippingMethod === \App\Enums\ShippingMethod::Express->value)
+            <label class="grid gap-2 text-xs font-medium text-slate-600 md:col-span-2">
+                Mã vận đơn
+                <input
+                    id="shipping-tracking-code-{{ $orderId }}"
+                    wire:model="trackingCode"
+                    type="text"
+                    maxlength="100"
+                    @disabled(! $canUpdate)
+                    class="rounded-lg border-slate-300 text-sm"
+                    placeholder="Nhập mã vận đơn"
+                />
+                @error('trackingCode') <span class="text-red-600">{{ $message }}</span> @enderror
+            </label>
+        @else
+            <label class="grid gap-2 text-xs font-medium text-slate-600 md:col-span-2">
+                Tài xế
+                <select wire:model="driverId" @disabled(! $canUpdate) class="rounded-lg border-slate-300 text-sm">
+                    <option value="">Chọn tài xế</option>
+                    @foreach ($drivers as $driver)
+                        <option value="{{ $driver->id }}">
+                            {{ $driver->name }} - {{ $driver->phone }}{{ filled($driver->license_plate) ? ' - '.$driver->license_plate : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('driverId') <span class="text-red-600">{{ $message }}</span> @enderror
+            </label>
+        @endif
+
+        @error('shippingMethod') <p class="text-xs text-red-600 md:col-span-2">{{ $message }}</p> @enderror
+
+        @if ($canUpdate)
+            <button
+                type="button"
+                wire:click="save"
+                wire:loading.attr="disabled"
+                wire:target="save"
+                class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white transition hover:bg-primary-500 disabled:opacity-70 md:col-span-2"
+            >
+                <x-heroicon-o-check class="size-4" />
+                <span wire:loading.remove wire:target="save">Lưu thông tin vận chuyển</span>
+                <span wire:loading wire:target="save">Đang lưu...</span>
+            </button>
+        @endif
     </div>
 
     @unless ($canUpdate)
         <p class="border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
             {{ $isDelivered
-                ? 'Mã vận đơn đã được khóa sau khi xác nhận giao hàng.'
-                : 'Có thể cập nhật mã vận đơn sau khi đơn hoàn thành sản xuất.' }}
+                ? 'Thông tin vận chuyển đã được khóa sau khi xác nhận giao hàng.'
+                : 'Có thể cập nhật vận chuyển sau khi đơn hoàn thành sản xuất.' }}
         </p>
     @endunless
 </section>

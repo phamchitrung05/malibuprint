@@ -17,6 +17,12 @@ class ShippingResource extends Resource
 {
     protected static ?string $model = Shipping::class;
 
+    protected static ?string $navigationLabel = 'Lịch sử giao hàng';
+
+    protected static ?string $modelLabel = 'lịch sử giao hàng';
+
+    protected static ?string $pluralModelLabel = 'lịch sử giao hàng';
+
     // Thông tin giao hàng được hiển thị trong nhóm vận chuyển riêng.
     protected static string|UnitEnum|null $navigationGroup = 'Shipping';
 

@@ -10,9 +10,11 @@ use App\Livewire\CustomerStocks\ReleaseCustomerStock;
 use App\Livewire\Orders\UpdateOrderStatus;
 use App\Models\Customer;
 use App\Models\CustomerStock;
+use App\Models\Driver;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
+use App\Models\ShippingProvider;
 use App\Models\User;
 use App\Services\InventoryManager;
 use App\Services\OrderInventoryManager;
@@ -50,6 +52,7 @@ class InventoryWorkflowTest extends TestCase
                 'customer_mode' => 'existing',
                 'customer_id' => $customer->id,
                 'fulfillment_mode' => FulfillmentMode::Single->value,
+                'shipping_tracking_code' => 'TEST-ALLOCATE',
                 'delivery_date' => now()->addDay()->toDateString(),
                 'note' => 'Ghi chú khi tạo đơn',
                 'items' => [[
@@ -191,6 +194,7 @@ class InventoryWorkflowTest extends TestCase
                 'customer_mode' => 'existing',
                 'customer_id' => $customer->id,
                 'fulfillment_mode' => FulfillmentMode::Single->value,
+                'shipping_tracking_code' => 'TEST-INSUFFICIENT',
                 'delivery_date' => now()->addDay()->toDateString(),
                 'items' => [[
                     'product_id' => $product->id,
@@ -427,6 +431,12 @@ class InventoryWorkflowTest extends TestCase
             'name' => 'Khách tồn kho',
             'phone' => fake()->unique()->numerify('09########'),
         ]);
+        $provider = ShippingProvider::query()->where('name', 'Giao hàng nội bộ')->firstOrFail();
+        $driver = Driver::query()->create([
+            'name' => 'Tài xế tồn kho',
+            'phone' => '0900000044',
+            'is_active' => true,
+        ]);
         $product = Product::query()->create(['name' => 'Sản phẩm tồn kho', 'unit' => 'cái']);
         $firstSku = ProductSku::query()->create([
             'product_id' => $product->id,
@@ -447,6 +457,8 @@ class InventoryWorkflowTest extends TestCase
             'customer_id' => $customer->id,
             'order_date' => now(),
             'created_by' => $user->id,
+            'shipping_provider_id' => $provider->id,
+            'driver_id' => $driver->id,
         ]);
         $order->items()->createMany([
             ['product_sku_id' => $firstSku->id, 'quantity' => 30, 'unit_price' => 10000, 'subtotal' => 300000],

@@ -79,6 +79,7 @@ class OrderItemServiceWorkflowTest extends TestCase
                 'customer_mode' => 'existing',
                 'customer_id' => $customer->id,
                 'fulfillment_mode' => FulfillmentMode::Single->value,
+                'shipping_tracking_code' => 'TEST-SERVICE',
                 'delivery_date' => now()->addDay()->toDateString(),
                 'items' => [[
                     'product_id' => $product->id,

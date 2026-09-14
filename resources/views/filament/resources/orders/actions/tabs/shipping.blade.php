@@ -1,6 +1,6 @@
 @php
-    $showShippingMethod = $order->fulfillment_mode === \App\Enums\FulfillmentMode::Single
-        && (! $order->is_delivered || $order->shipping_method === \App\Enums\ShippingMethod::BestExpress);
+    $showShippingMethod = ! $order->is_delivered
+        || $order->shipping_method === \App\Enums\ShippingMethod::Express;
 @endphp
 
 @if ($showShippingMethod)
@@ -29,11 +29,25 @@
     </div>
     <div class="grid gap-4 p-5 md:grid-cols-2">
         <div class="rounded-lg bg-slate-50 p-4">
+            <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Vận chuyển</p>
+            <p class="mt-2 text-sm font-medium text-slate-800">{{ $order->shippingProvider?->name ?? 'Chưa chọn đơn vị vận chuyển' }}</p>
+            <p class="mt-1 text-sm text-slate-500">
+                @if ($order->shipping_method === \App\Enums\ShippingMethod::Vehicle)
+                    {{ $order->driver?->name ?? 'Chưa chọn tài xế' }}
+                    @if ($order->driver?->phone)
+                        - {{ $order->driver->phone }}
+                    @endif
+                @else
+                    Mã vận đơn: {{ $order->shipping_tracking_code ?: 'Chưa nhập' }}
+                @endif
+            </p>
+        </div>
+        <div class="rounded-lg bg-slate-50 p-4">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Địa chỉ nhận hàng</p>
             <p class="mt-2 text-sm font-medium text-slate-800">{{ $order->customer?->address ?? 'Chưa có địa chỉ giao hàng' }}</p>
             <p class="mt-1 text-sm text-slate-500">{{ $order->customer?->phone ?? 'Chưa có số điện thoại' }}</p>
         </div>
-        <div class="space-y-3">
+        <div class="space-y-3 md:col-span-2">
             @forelse ($order->shipping as $shipping)
                 <div class="rounded-lg border border-slate-200 p-4 text-sm">
                     <div class="flex justify-between gap-3"><span class="text-slate-500">Trạng thái</span><b>{{ \App\Support\StatusApp::label('shipping.status', $shipping->status) }}</b></div>

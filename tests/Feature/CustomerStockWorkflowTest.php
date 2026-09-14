@@ -9,9 +9,11 @@ use App\Livewire\CustomerStocks\ReleaseCustomerStock;
 use App\Livewire\Orders\UpdateOrderStatus;
 use App\Models\Customer;
 use App\Models\CustomerStock;
+use App\Models\Driver;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
+use App\Models\ShippingProvider;
 use App\Models\User;
 use App\Services\CustomerStockManager;
 use App\Services\OrderItemServiceManager;
@@ -318,6 +320,12 @@ class CustomerStockWorkflowTest extends TestCase
             'stock' => 0,
             'status' => 'active',
         ]);
+        $provider = ShippingProvider::query()->where('name', 'Giao hàng nội bộ')->firstOrFail();
+        $driver = Driver::query()->create([
+            'name' => 'Tài xế lưu kho',
+            'phone' => '0900000022',
+            'is_active' => true,
+        ]);
         $order = Order::query()->create([
             'order_code' => 'STOCK-'.uniqid(),
             'customer_id' => $customer->id,
@@ -328,6 +336,8 @@ class CustomerStockWorkflowTest extends TestCase
             'discount' => 0,
             'shipping_fee' => $shippingFee,
             'total_amount' => ($quantity * 10000) + $shippingFee,
+            'shipping_provider_id' => $provider->id,
+            'driver_id' => $driver->id,
             'created_by' => $user->id,
         ]);
 

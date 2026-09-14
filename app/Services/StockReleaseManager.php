@@ -4,9 +4,12 @@ namespace App\Services;
 
 use App\Enums\FulfillmentMode;
 use App\Enums\FulfillmentStatus;
+use App\Enums\ShippingMethod;
 use App\Models\CustomerStock;
 use App\Models\CustomerStockItem;
+use App\Models\Driver;
 use App\Models\Order;
+use App\Models\ShippingProvider;
 use App\Models\StockRelease;
 use App\Support\StatusApp;
 use Illuminate\Support\Collection;
@@ -170,6 +173,25 @@ class StockReleaseManager
         if ($order->fulfillment_status === FulfillmentStatus::FullyReleased) {
             throw ValidationException::withMessages([
                 'customerStock' => 'Đơn hàng này đã được xuất hết.',
+            ]);
+        }
+
+        if (! ShippingProvider::query()->whereKey($order->shipping_provider_id)->where('is_active', true)->exists()) {
+            throw ValidationException::withMessages([
+                'customerStock' => 'Vui lòng chọn đơn vị vận chuyển đang hoạt động trước khi xuất kho.',
+            ]);
+        }
+
+        if ($order->shipping_method === ShippingMethod::Express && blank($order->shipping_tracking_code)) {
+            throw ValidationException::withMessages([
+                'customerStock' => 'Vui lòng nhập mã vận đơn trước khi xuất kho.',
+            ]);
+        }
+
+        if ($order->shipping_method === ShippingMethod::Vehicle
+            && ! Driver::query()->whereKey($order->driver_id)->where('is_active', true)->exists()) {
+            throw ValidationException::withMessages([
+                'customerStock' => 'Vui lòng chọn tài xế đang hoạt động trước khi xuất kho.',
             ]);
         }
     }

@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
 use App\Models\Service;
+use App\Models\ShippingProvider;
 use App\Models\User;
 use App\Services\PrintDocumentFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -123,6 +124,7 @@ class OrderPrintTest extends TestCase
             'phone' => '0900000011',
             'address' => '123 Đường In Ấn',
         ]);
+        $provider = ShippingProvider::query()->where('name', 'Best Express')->firstOrFail();
         $product = Product::query()->create([
             'name' => "Sản phẩm {$code}",
             'product_type' => 'in_ly',
@@ -144,6 +146,7 @@ class OrderPrintTest extends TestCase
             'status' => 'pending',
             'discount' => 10000,
             'shipping_fee' => 25000,
+            'shipping_provider_id' => $provider->id,
             'note' => 'Ghi chú in từ Order',
             'created_by' => $user->id,
         ]);
