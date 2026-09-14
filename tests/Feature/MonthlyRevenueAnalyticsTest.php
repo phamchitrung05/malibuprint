@@ -42,7 +42,7 @@ class MonthlyRevenueAnalyticsTest extends TestCase
     public function test_revenue_and_cup_printing_follow_completed_payment_month(): void
     {
         CarbonImmutable::setTestNow('2026-04-15 10:00:00');
-        [$customer, $sku, $service] = $this->createCatalog();
+        [$customer, $sku, $paperSku, $service] = $this->createCatalog();
 
         $marchOrder = $this->createSingleOrderWithService($customer, $sku, $service, 2, '2026-02-20');
         Payment::query()->create([
@@ -61,12 +61,26 @@ class MonthlyRevenueAnalyticsTest extends TestCase
             'status' => StatusApp::value('payment.status', 'completed'),
         ]);
 
-        $stockOrder = $this->createCustomerStockOrderWithPaidRelease($customer, $sku, $service);
+        $paperOrder = $this->createOrder($customer, '2026-03-08', FulfillmentMode::Single);
+        $paperOrder->items()->create([
+            'product_sku_id' => $paperSku->id,
+            'quantity' => 2,
+            'unit_price' => 100000,
+            'subtotal' => 200000,
+        ]);
+        Payment::query()->create([
+            'order_id' => $paperOrder->id,
+            'payment_date' => '2026-04-05 09:00:00',
+            'amount' => 200000,
+            'status' => StatusApp::value('payment.status', 'completed'),
+        ]);
+
+        $stockOrder = $this->createCustomerStockOrderWithPaidRelease($customer, $sku, $paperSku, $service);
         Payment::query()->create([
             'order_id' => $stockOrder->id,
             'stock_release_id' => $stockOrder->customerStock->releases->first()->id,
             'payment_date' => '2026-04-08 09:00:00',
-            'amount' => 125000,
+            'amount' => 225000,
             'status' => StatusApp::value('payment.status', 'completed'),
         ]);
 
@@ -88,14 +102,16 @@ class MonthlyRevenueAnalyticsTest extends TestCase
 
         $this->assertSame(2, $queryCount);
         $this->assertSame(['03/2026', '04/2026'], $series['labels']);
-        $this->assertSame([250000.0, 500000.0], $series['revenue']);
+        $this->assertSame([250000.0, 800000.0], $series['revenue']);
         $this->assertSame([50000.0, 100000.0], $series['cup_printing_revenue']);
         $this->assertSame([2, 4], $series['cup_printing_quantity']);
+        $this->assertSame([0.0, 300000.0], $series['paper_printing_revenue']);
         $this->assertSame([
             'label' => '04/2026',
-            'revenue' => 500000.0,
+            'revenue' => 800000.0,
             'cup_printing_revenue' => 100000.0,
             'cup_printing_quantity' => 4,
+            'paper_printing_revenue' => 300000.0,
         ], app(MonthlyRevenueAnalytics::class)->currentMonth());
     }
 
@@ -116,7 +132,8 @@ class MonthlyRevenueAnalyticsTest extends TestCase
         Livewire::actingAs($user)
             ->test(MonthlyRevenueStats::class)
             ->assertSee('Doanh thu tháng 04/2026')
-            ->assertSee('Số lượng dịch vụ in ly tháng 04/2026');
+            ->assertSee('Số lượng dịch vụ in ly tháng 04/2026')
+            ->assertSee('Doanh thu sản phẩm in giấy tháng 04/2026');
 
         Livewire::actingAs($user)
             ->test(TotalRevenueChart::class)
@@ -131,7 +148,7 @@ class MonthlyRevenueAnalyticsTest extends TestCase
             ->assertSet('filters.months', '6');
     }
 
-    /** @return array{Customer, ProductSku, Service} */
+    /** @return array{Customer, ProductSku, ProductSku, Service} */
     private function createCatalog(): array
     {
         $customer = Customer::query()->create([
@@ -150,10 +167,22 @@ class MonthlyRevenueAnalyticsTest extends TestCase
             'stock' => 100,
             'status' => 'active',
         ]);
+        $paperProduct = Product::query()->create([
+            'name' => 'Giấy báo cáo',
+            'product_type' => Product::PAPER_PRINTING_TYPE,
+            'unit' => 'tờ',
+        ]);
+        $paperSku = ProductSku::query()->create([
+            'product_id' => $paperProduct->id,
+            'sku_code' => 'REPORT-PAPER-SKU',
+            'price' => 100000,
+            'stock' => 100,
+            'status' => 'active',
+        ]);
         $service = Service::query()->where('code', Service::CUP_PRINTING_CODE)->firstOrFail();
         $service->forceFill(['unit_price' => 25000])->save();
 
-        return [$customer, $sku, $service];
+        return [$customer, $sku, $paperSku, $service];
     }
 
     private function createSingleOrderWithService(
@@ -184,6 +213,7 @@ class MonthlyRevenueAnalyticsTest extends TestCase
     private function createCustomerStockOrderWithPaidRelease(
         Customer $customer,
         ProductSku $sku,
+        ProductSku $paperSku,
         Service $service,
     ): Order {
         $order = $this->createOrder($customer, '2026-02-01', FulfillmentMode::CustomerStock);
@@ -200,6 +230,12 @@ class MonthlyRevenueAnalyticsTest extends TestCase
             'unit_price' => 25000,
             'subtotal' => 100000,
         ]);
+        $paperOrderItem = $order->items()->create([
+            'product_sku_id' => $paperSku->id,
+            'quantity' => 1,
+            'unit_price' => 100000,
+            'subtotal' => 100000,
+        ]);
         $customerStock = CustomerStock::query()->create([
             'customer_id' => $customer->id,
             'order_id' => $order->id,
@@ -210,16 +246,21 @@ class MonthlyRevenueAnalyticsTest extends TestCase
             'received_quantity' => 4,
             'released_quantity' => 1,
         ]);
+        $paperStockItem = $customerStock->items()->create([
+            'order_item_id' => $paperOrderItem->id,
+            'received_quantity' => 1,
+            'released_quantity' => 1,
+        ]);
         $release = StockRelease::query()->create([
             'uuid' => (string) Str::uuid(),
             'release_code' => 'REPORT-RELEASE',
             'customer_stock_id' => $customerStock->id,
             'released_at' => '2026-03-28 09:00:00',
-            'gross_product_amount' => 100000,
+            'gross_product_amount' => 200000,
             'gross_service_amount' => 25000,
             'allocated_discount' => 0,
             'reconciliation_adjustment' => 0,
-            'total_amount' => 125000,
+            'total_amount' => 225000,
             'allocated_shipping_fee' => 0,
         ]);
         $releaseItem = StockReleaseItem::query()->create([
@@ -235,6 +276,13 @@ class MonthlyRevenueAnalyticsTest extends TestCase
             'quantity' => 1,
             'unit_price' => 25000,
             'subtotal' => 25000,
+        ]);
+        StockReleaseItem::query()->create([
+            'stock_release_id' => $release->id,
+            'customer_stock_item_id' => $paperStockItem->id,
+            'quantity' => 1,
+            'unit_price' => 100000,
+            'amount' => 100000,
         ]);
 
         return $order->load('customerStock.releases');

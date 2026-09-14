@@ -13,7 +13,7 @@ class MonthlyRevenueStats extends StatsOverviewWidget
 
     protected ?string $pollingInterval = '30s';
 
-    protected int|array|null $columns = 2;
+    protected int|array|null $columns = 3;
 
     protected function getHeading(): ?string
     {
@@ -41,6 +41,14 @@ class MonthlyRevenueStats extends StatsOverviewWidget
                 ->description('Số sản phẩm in ly đã thu tiền')
                 ->descriptionIcon('heroicon-m-printer')
                 ->color('info'),
+            Stat::make(
+                "Doanh thu sản phẩm in giấy tháng {$metrics['label']}",
+                Number::currency($metrics['paper_printing_revenue'], in: 'VND', locale: 'vi', precision: 0),
+            )
+                // Chỉ cộng gross sản phẩm in giấy, không gồm dịch vụ, discount hoặc phí giao hàng.
+                ->description('Giá trị sản phẩm in giấy đã thu tiền')
+                ->descriptionIcon('heroicon-m-document-text')
+                ->color('warning'),
         ];
     }
 }

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Product extends Model
 {
+    public const PAPER_PRINTING_TYPE = 'in_giay';
+
     // Migration dùng tên bảng số ít nên cần khai báo tường minh để Eloquent không tự đoán thành "products".
     protected $table = 'product';
 

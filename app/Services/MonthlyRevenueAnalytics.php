@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\FulfillmentMode;
+use App\Models\Product;
 use App\Models\Service;
 use App\Support\StatusApp;
 use Carbon\CarbonImmutable;
@@ -19,7 +20,8 @@ class MonthlyRevenueAnalytics
      *     labels: list<string>,
      *     revenue: list<float>,
      *     cup_printing_revenue: list<float>,
-     *     cup_printing_quantity: list<int>
+     *     cup_printing_quantity: list<int>,
+     *     paper_printing_revenue: list<float>
      * }
      */
     public function trailingMonths(int $months = 12): array
@@ -45,10 +47,11 @@ class MonthlyRevenueAnalytics
             }
         }
 
-        foreach ($this->cupPrintingRows($periodStart, $periodEnd)->get() as $service) {
-            if (isset($buckets[$service->month])) {
-                $buckets[$service->month]['cup_printing_revenue'] = (float) $service->subtotal;
-                $buckets[$service->month]['cup_printing_quantity'] = (int) $service->quantity;
+        foreach ($this->paidDetailRows($periodStart, $periodEnd)->get() as $details) {
+            if (isset($buckets[$details->month])) {
+                $buckets[$details->month]['cup_printing_revenue'] = (float) $details->cup_printing_revenue;
+                $buckets[$details->month]['cup_printing_quantity'] = (int) $details->cup_printing_quantity;
+                $buckets[$details->month]['paper_printing_revenue'] = (float) $details->paper_printing_revenue;
             }
         }
 
@@ -57,11 +60,18 @@ class MonthlyRevenueAnalytics
             'revenue' => array_column($buckets, 'revenue'),
             'cup_printing_revenue' => array_column($buckets, 'cup_printing_revenue'),
             'cup_printing_quantity' => array_column($buckets, 'cup_printing_quantity'),
+            'paper_printing_revenue' => array_column($buckets, 'paper_printing_revenue'),
         ];
     }
 
     /**
-     * @return array{label: string, revenue: float, cup_printing_revenue: float, cup_printing_quantity: int}
+     * @return array{
+     *     label: string,
+     *     revenue: float,
+     *     cup_printing_revenue: float,
+     *     cup_printing_quantity: int,
+     *     paper_printing_revenue: float
+     * }
      */
     public function currentMonth(): array
     {
@@ -72,14 +82,15 @@ class MonthlyRevenueAnalytics
             'revenue' => $series['revenue'][0],
             'cup_printing_revenue' => $series['cup_printing_revenue'][0],
             'cup_printing_quantity' => $series['cup_printing_quantity'][0],
+            'paper_printing_revenue' => $series['paper_printing_revenue'][0],
         ];
     }
 
     /**
-     * Đơn thường dùng snapshot dịch vụ trên Order Item; Customer Stock dùng snapshot
-     * của đúng lần xuất đã thu tiền để không ghi nhận dịch vụ nhiều lần.
+     * Đơn thường dùng snapshot trên Order Item; Customer Stock dùng snapshot của đúng
+     * lần xuất đã thu tiền để không ghi nhận sản phẩm hoặc dịch vụ nhiều lần.
      */
-    private function cupPrintingRows(CarbonImmutable $periodStart, CarbonImmutable $periodEnd): Builder
+    private function paidDetailRows(CarbonImmutable $periodStart, CarbonImmutable $periodEnd): Builder
     {
         $completedPayment = StatusApp::value('payment.status', 'completed');
         $paymentMonth = $this->monthExpression('paid_payment.payment_date');
@@ -96,8 +107,9 @@ class MonthlyRevenueAnalytics
             ->where('paid_payment.payment_date', '<', $periodEnd)
             ->where('services.code', Service::CUP_PRINTING_CODE)
             ->selectRaw("{$paymentMonth} AS month")
-            ->selectRaw('SUM(order_item_services.quantity) AS quantity')
-            ->selectRaw('SUM(order_item_services.subtotal) AS subtotal')
+            ->selectRaw('SUM(order_item_services.quantity) AS cup_printing_quantity')
+            ->selectRaw('SUM(order_item_services.subtotal) AS cup_printing_revenue')
+            ->selectRaw('0 AS paper_printing_revenue')
             ->groupByRaw($paymentMonth);
 
         $stockReleaseServices = DB::table('payment as paid_payment')
@@ -111,15 +123,57 @@ class MonthlyRevenueAnalytics
             ->where('paid_payment.payment_date', '<', $periodEnd)
             ->where('services.code', Service::CUP_PRINTING_CODE)
             ->selectRaw("{$paymentMonth} AS month")
-            ->selectRaw('SUM(stock_release_item_services.quantity) AS quantity')
-            ->selectRaw('SUM(stock_release_item_services.subtotal) AS subtotal')
+            ->selectRaw('SUM(stock_release_item_services.quantity) AS cup_printing_quantity')
+            ->selectRaw('SUM(stock_release_item_services.subtotal) AS cup_printing_revenue')
+            ->selectRaw('0 AS paper_printing_revenue')
+            ->groupByRaw($paymentMonth);
+
+        $singleOrderPaperProducts = DB::table('payment as paid_payment')
+            ->join('orders', 'orders.id', '=', 'paid_payment.order_id')
+            ->join('order_item', 'order_item.order_id', '=', 'orders.id')
+            ->join('product_sku', 'product_sku.id', '=', 'order_item.product_sku_id')
+            ->join('product', 'product.id', '=', 'product_sku.product_id')
+            ->whereNull('paid_payment.stock_release_id')
+            ->where('orders.fulfillment_mode', FulfillmentMode::Single->value)
+            ->where('paid_payment.status', $completedPayment)
+            ->where('paid_payment.payment_date', '>=', $periodStart)
+            ->where('paid_payment.payment_date', '<', $periodEnd)
+            ->where('product.product_type', Product::PAPER_PRINTING_TYPE)
+            ->selectRaw("{$paymentMonth} AS month")
+            ->selectRaw('0 AS cup_printing_quantity')
+            ->selectRaw('0 AS cup_printing_revenue')
+            ->selectRaw('SUM(order_item.subtotal) AS paper_printing_revenue')
+            ->groupByRaw($paymentMonth);
+
+        $stockReleasePaperProducts = DB::table('payment as paid_payment')
+            ->join('stock_release_items', 'stock_release_items.stock_release_id', '=', 'paid_payment.stock_release_id')
+            ->join('customer_stock_items', 'customer_stock_items.id', '=', 'stock_release_items.customer_stock_item_id')
+            ->join('order_item', 'order_item.id', '=', 'customer_stock_items.order_item_id')
+            ->join('product_sku', 'product_sku.id', '=', 'order_item.product_sku_id')
+            ->join('product', 'product.id', '=', 'product_sku.product_id')
+            ->whereNotNull('paid_payment.stock_release_id')
+            ->where('paid_payment.status', $completedPayment)
+            ->where('paid_payment.payment_date', '>=', $periodStart)
+            ->where('paid_payment.payment_date', '<', $periodEnd)
+            ->where('product.product_type', Product::PAPER_PRINTING_TYPE)
+            ->selectRaw("{$paymentMonth} AS month")
+            ->selectRaw('0 AS cup_printing_quantity')
+            ->selectRaw('0 AS cup_printing_revenue')
+            ->selectRaw('SUM(stock_release_items.amount) AS paper_printing_revenue')
             ->groupByRaw($paymentMonth);
 
         return DB::query()
-            ->fromSub($singleOrderServices->unionAll($stockReleaseServices), 'monthly_cup_printing')
+            ->fromSub(
+                $singleOrderServices
+                    ->unionAll($stockReleaseServices)
+                    ->unionAll($singleOrderPaperProducts)
+                    ->unionAll($stockReleasePaperProducts),
+                'monthly_paid_details',
+            )
             ->select('month')
-            ->selectRaw('SUM(quantity) AS quantity')
-            ->selectRaw('SUM(subtotal) AS subtotal')
+            ->selectRaw('SUM(cup_printing_quantity) AS cup_printing_quantity')
+            ->selectRaw('SUM(cup_printing_revenue) AS cup_printing_revenue')
+            ->selectRaw('SUM(paper_printing_revenue) AS paper_printing_revenue')
             ->groupBy('month');
     }
 
@@ -137,7 +191,13 @@ class MonthlyRevenueAnalytics
     /**
      * Tạo đủ bucket kể cả tháng không có doanh thu để Chart.js luôn giữ trục thời gian liên tục.
      *
-     * @return array<string, array{label: string, revenue: float, cup_printing_revenue: float, cup_printing_quantity: int}>
+     * @return array<string, array{
+     *     label: string,
+     *     revenue: float,
+     *     cup_printing_revenue: float,
+     *     cup_printing_quantity: int,
+     *     paper_printing_revenue: float
+     * }>
      */
     private function emptyBuckets(CarbonImmutable $periodStart, int $months): array
     {
@@ -150,6 +210,7 @@ class MonthlyRevenueAnalytics
                 'revenue' => 0.0,
                 'cup_printing_revenue' => 0.0,
                 'cup_printing_quantity' => 0,
+                'paper_printing_revenue' => 0.0,
             ];
         }
 
