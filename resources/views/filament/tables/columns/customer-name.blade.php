@@ -1,5 +1,5 @@
-<span class="flex max-w-full items-center gap-2">
-    <span class="min-w-0 break-words">{{ $name }}</span>
+<div class="max-w-full">
+    <div class="min-w-0 break-words">{{ $name }}</div>
     @if ($isBestExpress)
         <span
             title="Giao bằng Best Express"
@@ -9,4 +9,4 @@
             <span class="bg-[#164194] px-1 text-white">EXPRESS</span>
         </span>
     @endif
-</span>
+</div>
