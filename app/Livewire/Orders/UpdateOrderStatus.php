@@ -49,13 +49,13 @@ class UpdateOrderStatus extends Component
             $order->status = $completed;
             $order->saveQuietly();
 
-            // Đơn lưu kho được nhập toàn bộ thành phẩm ngay trong transaction hoàn thành sản xuất.
-            app(CustomerStockManager::class)->createForCompletedOrder($order->id, auth()->id());
-
             app(OrderActivityLogger::class)->log($order, 'order.status_changed', 'Đã hoàn thành sản xuất', [
                 'old' => ['status' => $processing],
                 'new' => ['status' => $completed],
             ]);
+
+            // Ghi nhận hoàn thành trước khi tạo activity nhập kho để timeline đúng thứ tự.
+            app(CustomerStockManager::class)->createForCompletedOrder($order->id, auth()->id());
         });
 
         $this->updatedSuccessfully('Đã hoàn thành sản xuất');

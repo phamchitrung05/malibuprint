@@ -41,6 +41,12 @@ class CustomerStockWorkflowTest extends TestCase
         $this->assertSame(0, $stock->items()->sole()->released_quantity);
         $this->assertSame(FulfillmentStatus::Ready, $order->refresh()->fulfillment_status);
 
+        $activityDescriptions = $order->activities()->oldest('id')->pluck('description')->all();
+        $this->assertLessThan(
+            array_search('Đã nhập thành phẩm vào kho khách hàng', $activityDescriptions, true),
+            array_search('Đã hoàn thành sản xuất', $activityDescriptions, true),
+        );
+
         Livewire::actingAs($user)
             ->test(ReleaseCustomerStock::class, ['customerStockId' => $stock->id])
             ->assertViewHas('totalRemainingQuantity', 100)
