@@ -1,6 +1,6 @@
 <div class="max-w-full">
     <div class="min-w-0 break-words">{{ $name }}</div>
-    @if ($isBestExpress)
+    @if ($isExpress)
         <span
             title="Giao bằng Best Express"
             class="inline-flex shrink-0 overflow-hidden rounded text-[7px] font-black leading-3 tracking-tight shadow-sm ring-1 ring-slate-200"

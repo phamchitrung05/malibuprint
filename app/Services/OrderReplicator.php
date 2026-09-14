@@ -47,7 +47,6 @@ class OrderReplicator
                 'shipping_fee' => $sourceOrder->shipping_fee,
                 'shipping_method' => StatusApp::default('order.shipping_method'),
                 'shipping_tracking_code' => null,
-                'shipping_provider_id' => null,
                 'driver_id' => null,
                 'total_amount' => 0,
                 'note' => $sourceOrder->note,

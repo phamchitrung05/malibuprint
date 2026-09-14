@@ -5,7 +5,6 @@ namespace App\Livewire\Orders;
 use App\Enums\ShippingMethod;
 use App\Models\Driver;
 use App\Models\Order;
-use App\Models\ShippingProvider;
 use App\Services\OrderActivityLogger;
 use App\Support\StatusApp;
 use Filament\Notifications\Notification;
@@ -25,8 +24,6 @@ class UpdateShippingMethod extends Component
 
     public string $shippingMethod = ShippingMethod::Vehicle->value;
 
-    public ?int $shippingProviderId = null;
-
     public ?int $driverId = null;
 
     public function mount(int $orderId): void
@@ -36,7 +33,6 @@ class UpdateShippingMethod extends Component
         $order = $this->getOrder();
         $this->trackingCode = $order->shipping_tracking_code;
         $this->shippingMethod = ($order->shipping_method ?? ShippingMethod::Vehicle)->value;
-        $this->shippingProviderId = $order->shipping_provider_id;
         $this->driverId = $order->driver_id;
     }
 
@@ -44,11 +40,6 @@ class UpdateShippingMethod extends Component
     {
         $data = $this->validate([
             'shippingMethod' => ['required', Rule::enum(ShippingMethod::class)],
-            'shippingProviderId' => [
-                'required',
-                'integer',
-                Rule::exists('shipping_providers', 'id')->where('is_active', true),
-            ],
             'trackingCode' => [
                 Rule::requiredIf($this->shippingMethod === ShippingMethod::Express->value),
                 'nullable',
@@ -62,10 +53,8 @@ class UpdateShippingMethod extends Component
                 Rule::exists('drivers', 'id')->where('is_active', true),
             ],
         ], [
-            'shippingProviderId.required' => 'Vui lòng chọn đơn vị vận chuyển.',
-            'shippingProviderId.exists' => 'Đơn vị vận chuyển không còn hoạt động.',
-            'trackingCode.required' => 'Vui lòng nhập mã vận đơn.',
-            'trackingCode.max' => 'Mã vận đơn không được vượt quá 100 ký tự.',
+            'trackingCode.required' => 'Vui lòng nhập mã giao hàng nhanh.',
+            'trackingCode.max' => 'Mã giao hàng nhanh không được vượt quá 100 ký tự.',
             'driverId.required' => 'Vui lòng chọn tài xế.',
             'driverId.exists' => 'Tài xế không còn hoạt động.',
         ]);
@@ -89,7 +78,6 @@ class UpdateShippingMethod extends Component
 
             $oldMethod = $order->shipping_method ?? ShippingMethod::Vehicle;
             $oldTrackingCode = $order->shipping_tracking_code;
-            $oldProviderId = $order->shipping_provider_id;
             $oldDriverId = $order->driver_id;
             $method = ShippingMethod::from($data['shippingMethod']);
             $trackingCode = $method === ShippingMethod::Express
@@ -100,7 +88,6 @@ class UpdateShippingMethod extends Component
             $order->forceFill([
                 'shipping_method' => $method,
                 'shipping_tracking_code' => $trackingCode,
-                'shipping_provider_id' => (int) $data['shippingProviderId'],
                 'driver_id' => $driverId,
             ])->saveQuietly();
 
@@ -112,13 +99,11 @@ class UpdateShippingMethod extends Component
                     'old' => [
                         'shipping_method' => $oldMethod->value,
                         'shipping_tracking_code' => $oldTrackingCode,
-                        'shipping_provider_id' => $oldProviderId,
                         'driver_id' => $oldDriverId,
                     ],
                     'new' => [
                         'shipping_method' => $method->value,
                         'shipping_tracking_code' => $trackingCode,
-                        'shipping_provider_id' => (int) $data['shippingProviderId'],
                         'driver_id' => $driverId,
                     ],
                 ],
@@ -126,7 +111,6 @@ class UpdateShippingMethod extends Component
 
             $this->trackingCode = $trackingCode;
             $this->shippingMethod = $method->value;
-            $this->shippingProviderId = (int) $data['shippingProviderId'];
             $this->driverId = $driverId;
         });
 
@@ -145,9 +129,7 @@ class UpdateShippingMethod extends Component
         return view('livewire.orders.update-shipping-method', [
             'canUpdate' => $order->status === StatusApp::value('order.status', 'completed')
                 && ! $order->is_delivered,
-            'shippingMethod' => $order->shipping_method?->value ?? ShippingMethod::Vehicle->value,
             'isDelivered' => $order->is_delivered,
-            'shippingProviders' => ShippingProvider::query()->where('is_active', true)->orderBy('name')->get(),
             'drivers' => Driver::query()->where('is_active', true)->orderBy('name')->get(),
         ]);
     }

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('shipping_tracking_code', 100)
                 ->nullable()
                 ->after('shipping_method')
-                ->comment('Mã vận đơn Best Express');
+                ->comment('Mã giao hàng nhanh');
         });
     }
 

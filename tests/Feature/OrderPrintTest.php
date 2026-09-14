@@ -5,11 +5,11 @@ namespace Tests\Feature;
 use App\Enums\ShippingMethod;
 use App\Filament\Resources\Orders\Pages\ListOrders;
 use App\Models\Customer;
+use App\Models\Driver;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
 use App\Models\Service;
-use App\Models\ShippingProvider;
 use App\Models\User;
 use App\Services\PrintDocumentFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -78,31 +78,81 @@ class OrderPrintTest extends TestCase
             ->assertSeeInOrder(['PRINT-SECOND', 'PRINT-FIRST']);
     }
 
-    public function test_printed_order_shows_tracking_code_only_for_best_express(): void
+    public function test_printed_order_shows_tracking_code_for_express_delivery_only(): void
     {
         $user = User::factory()->create();
-        $bestExpressOrder = $this->createPrintableOrder($user, 'PRINT-BEST');
-        $bestExpressOrder->forceFill([
-            'shipping_method' => ShippingMethod::BestExpress,
-            'shipping_tracking_code' => 'BEST-PRINT-001',
+        $expressOrder = $this->createPrintableOrder($user, 'PRINT-EXPRESS');
+        $expressOrder->forceFill([
+            'shipping_method' => ShippingMethod::Express,
+            'shipping_tracking_code' => 'EXPRESS-PRINT-001',
         ])->save();
-        $standardOrder = $this->createPrintableOrder($user, 'PRINT-STANDARD');
+        $vehicleOrder = $this->createPrintableOrder($user, 'PRINT-VEHICLE');
+        $driver = Driver::query()->create([
+            'name' => 'Nguyễn Văn Tài',
+            'phone' => '0909123456',
+            'license_plate' => '51A-123.45',
+            'is_active' => true,
+            'note' => 'Gọi khách trước khi giao',
+        ]);
+        $vehicleOrder->forceFill([
+            'shipping_method' => ShippingMethod::Vehicle,
+            'shipping_tracking_code' => null,
+            'driver_id' => $driver->id,
+        ])->save();
+        $pickupOrder = $this->createPrintableOrder($user, 'PRINT-PICKUP');
+        $pickupOrder->forceFill([
+            'shipping_method' => ShippingMethod::CustomerPickup,
+            'shipping_tracking_code' => null,
+            'driver_id' => null,
+        ])->save();
+        $innerCityOrder = $this->createPrintableOrder($user, 'PRINT-INNER-CITY');
+        $innerCityOrder->forceFill([
+            'shipping_method' => ShippingMethod::InnerCity,
+            'shipping_tracking_code' => null,
+            'driver_id' => null,
+        ])->save();
 
         $this->actingAs($user)
-            ->get(route('orders.print', $bestExpressOrder))
+            ->get(route('orders.print', $expressOrder))
             ->assertOk()
             ->assertSeeInOrder([
                 'Ngày giao hàng dự kiến',
                 'BEST',
                 'EXPRESS',
-                'BEST-PRINT-001',
+                'EXPRESS-PRINT-001',
             ])
-            ->assertSeeHtml('data-best-express-tracking');
+            ->assertDontSee('Phương thức giao')
+            ->assertDontSee('Mã giao hàng nhanh');
 
         $this->actingAs($user)
-            ->get(route('orders.print', $standardOrder))
+            ->get(route('orders.print', $vehicleOrder))
             ->assertOk()
-            ->assertDontSeeHtml('data-best-express-tracking');
+            ->assertSeeInOrder([
+                'Nhà xe',
+                'Nguyễn Văn Tài',
+                '0909123456',
+                '51A-123.45',
+                'Ghi chú nhà xe',
+                'Gọi khách trước khi giao',
+            ])
+            ->assertDontSee('BEST')
+            ->assertDontSee('EXPRESS-PRINT-001');
+
+        $this->actingAs($user)
+            ->get(route('orders.print', $pickupOrder))
+            ->assertOk()
+            ->assertSee('Khách hàng tới lấy')
+            ->assertDontSee('Phương thức giao')
+            ->assertDontSee('BEST')
+            ->assertDontSee('Mã giao hàng nhanh');
+
+        $this->actingAs($user)
+            ->get(route('orders.print', $innerCityOrder))
+            ->assertOk()
+            ->assertSee('Giao hàng nội thành')
+            ->assertDontSee('Phương thức giao')
+            ->assertDontSee('BEST')
+            ->assertDontSee('Mã giao hàng nhanh');
     }
 
     public function test_print_routes_require_authentication(): void
@@ -124,7 +174,6 @@ class OrderPrintTest extends TestCase
             'phone' => '0900000011',
             'address' => '123 Đường In Ấn',
         ]);
-        $provider = ShippingProvider::query()->where('name', 'Best Express')->firstOrFail();
         $product = Product::query()->create([
             'name' => "Sản phẩm {$code}",
             'product_type' => 'in_ly',
@@ -146,7 +195,6 @@ class OrderPrintTest extends TestCase
             'status' => 'pending',
             'discount' => 10000,
             'shipping_fee' => 25000,
-            'shipping_provider_id' => $provider->id,
             'note' => 'Ghi chú in từ Order',
             'created_by' => $user->id,
         ]);

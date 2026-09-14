@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\FulfillmentMode;
 use App\Enums\ShippingMethod;
 use App\Models\Customer;
+use App\Models\Driver;
 use App\Models\Order;
 use App\Models\StockRelease;
 use App\Support\StatusApp;
@@ -21,7 +22,7 @@ class PrintDocumentFactory
         $order->loadMissing([
             'customer',
             'creator',
-            'shippingProvider',
+            'driver',
             'items.productSku.product',
             'items.services',
         ]);
@@ -39,10 +40,11 @@ class PrintDocumentFactory
             'date' => $order->order_date,
             'secondary_date_label' => 'Ngày giao hàng',
             'secondary_date' => $order->delivery_date,
+            'shipping_method' => $order->shipping_method?->value,
             'shipping_tracking_code' => $order->shipping_method === ShippingMethod::Express
-                && $order->shippingProvider?->name === 'Best Express'
                 ? $order->shipping_tracking_code
                 : null,
+            'driver' => $this->driverData($order->driver),
             'employee' => $order->creator?->name,
             'customer' => $this->customerData($order->customer),
             'info_heading' => 'THÔNG TIN ĐƠN HÀNG',
@@ -90,7 +92,7 @@ class PrintDocumentFactory
     {
         $release->loadMissing([
             'customerStock.customer',
-            'customerStock.order',
+            'customerStock.order.driver',
             'creator',
             'items.customerStockItem.orderItem.productSku.product',
             'items.services',
@@ -108,7 +110,11 @@ class PrintDocumentFactory
             'date' => $release->released_at,
             'secondary_date_label' => 'Ngày thanh toán',
             'secondary_date' => $payment?->payment_date,
-            'shipping_tracking_code' => null,
+            'shipping_method' => $release->customerStock?->order?->shipping_method?->value,
+            'shipping_tracking_code' => $release->customerStock?->order?->shipping_method === ShippingMethod::Express
+                ? $release->customerStock?->order?->shipping_tracking_code
+                : null,
+            'driver' => $this->driverData($release->customerStock?->order?->driver),
             'employee' => $payment?->confirmer?->name ?? $release->creator?->name,
             'customer' => $this->customerData($release->customerStock?->customer),
             'info_heading' => 'THÔNG TIN PHIẾU XUẤT',
@@ -145,7 +151,7 @@ class PrintDocumentFactory
             'shipping_fee' => (float) $release->allocated_shipping_fee,
             'adjustment' => (float) $release->reconciliation_adjustment,
             'total' => (float) ($payment?->amount ?? $release->total_amount),
-            'total_label' => $payment ? 'TỔNG THU' : 'TỔNG THU',
+            'total_label' => 'TỔNG THU',
         ];
     }
 
@@ -157,6 +163,17 @@ class PrintDocumentFactory
             'address' => $customer?->address,
             'phone' => $customer?->phone,
             'code' => $customer?->uuid,
+        ];
+    }
+
+    /** @return array{name: ?string, phone: ?string, license_plate: ?string, note: ?string}|null */
+    private function driverData(?Driver $driver): ?array
+    {
+        return $driver === null ? null : [
+            'name' => $driver->name,
+            'phone' => $driver->phone,
+            'license_plate' => $driver->license_plate,
+            'note' => $driver->note,
         ];
     }
 }

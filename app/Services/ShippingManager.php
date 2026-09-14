@@ -8,7 +8,6 @@ use App\Enums\ShippingMethod;
 use App\Models\Driver;
 use App\Models\Order;
 use App\Models\Shipping;
-use App\Models\ShippingProvider;
 use App\Support\StatusApp;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -38,16 +37,10 @@ class ShippingManager
                 ]);
             }
 
-            if (! ShippingProvider::query()->whereKey($order->shipping_provider_id)->where('is_active', true)->exists()) {
-                throw ValidationException::withMessages([
-                    'shipping' => 'Vui lòng chọn đơn vị vận chuyển đang hoạt động trước khi xác nhận giao hàng.',
-                ]);
-            }
-
             if ($order->shipping_method === ShippingMethod::Express
                 && blank($order->shipping_tracking_code)) {
                 throw ValidationException::withMessages([
-                    'shipping' => 'Vui lòng nhập mã vận đơn trước khi xác nhận giao hàng.',
+                    'shipping' => 'Vui lòng nhập mã giao hàng nhanh trước khi xác nhận giao hàng.',
                 ]);
             }
 

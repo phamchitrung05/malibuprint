@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Enums\FulfillmentMode;
+use App\Enums\ShippingMethod;
 use App\Models\Customer;
 use App\Models\Driver;
 use App\Models\ManagedFile;
@@ -10,7 +11,6 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
 use App\Models\Service;
-use App\Models\ShippingProvider;
 use App\Models\User;
 use App\Services\AttachmentManager;
 use App\Services\CustomerStockManager;
@@ -173,7 +173,6 @@ class DemoDataSeeder extends Seeder
      */
     private function createOrders(Collection $customers, Collection $skus, int $actorId): Collection
     {
-        $provider = ShippingProvider::query()->where('name', 'Giao hàng nội bộ')->firstOrFail();
         $driver = Driver::query()->firstOrCreate([
             'phone' => '0900000000',
         ], [
@@ -182,10 +181,16 @@ class DemoDataSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        return collect($this->orderScenarios())->map(function (array $scenario, int $offset) use ($customers, $skus, $actorId, $provider, $driver): Order {
+        return collect($this->orderScenarios())->map(function (array $scenario, int $offset) use ($customers, $skus, $actorId, $driver): Order {
             $index = $offset + 1;
             $orderDate = now()->startOfDay()->subDays(self::RECORD_COUNT - $index)->addHours(8 + ($index % 9));
             $mode = FulfillmentMode::from($scenario['mode']);
+            $shippingMethod = match ($index % 4) {
+                1 => ShippingMethod::Express,
+                2 => ShippingMethod::CustomerPickup,
+                3 => ShippingMethod::InnerCity,
+                default => ShippingMethod::Vehicle,
+            };
             $order = Order::query()->create([
                 'order_code' => app(OrderCodeService::class)->generate($orderDate),
                 'customer_id' => $customers[$offset]->id,
@@ -197,8 +202,11 @@ class DemoDataSeeder extends Seeder
                 'subtotal' => 0,
                 'discount' => $index % 4 === 0 ? 50000 : 0,
                 'shipping_fee' => 15000 + ($index * 1000),
-                'shipping_provider_id' => $provider->id,
-                'driver_id' => $driver->id,
+                'shipping_method' => $shippingMethod,
+                'shipping_tracking_code' => $shippingMethod === ShippingMethod::Express
+                    ? 'GHN-DEMO-'.str_pad((string) $index, 4, '0', STR_PAD_LEFT)
+                    : null,
+                'driver_id' => $shippingMethod === ShippingMethod::Vehicle ? $driver->id : null,
                 'total_amount' => 0,
                 'note' => "Order demo scenario {$index}: {$scenario['description']}",
                 'created_by' => $actorId,

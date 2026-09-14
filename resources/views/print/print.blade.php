@@ -357,31 +357,34 @@
             font-weight: 600;
         }
 
-        .best-express-meta-row {
-            grid-template-columns: 38mm 4mm 1fr;
+        .shipping-method-text {
+            grid-column: span 3;
+            font-weight: 600;
         }
 
-        .best-express-logo {
+        .best-express-badge {
             display: inline-flex;
-            width: max-content;
+            grid-column: span 2;
+            justify-self: start;
             overflow: hidden;
-            border-radius: .8mm;
-            color: #fff;
-            font-size: 2.6mm;
+            border: .2mm solid #d7dce2;
+            border-radius: 1mm;
+            font-size: 2.45mm;
             font-weight: 800;
-            line-height: 4.6mm;
-            letter-spacing: -.05mm;
+            line-height: 4.2mm;
+            letter-spacing: -.08mm;
         }
 
-        .best-express-logo span {
-            padding: 0 1.5mm;
+        .best-express-badge span {
+            padding: 0 1.2mm;
+            color: #fff;
         }
 
-        .best-express-logo .best {
+        .best-express-badge span:first-child {
             background: #e31e24;
         }
 
-        .best-express-logo .express {
+        .best-express-badge span:last-child {
             background: #164194;
         }
 
@@ -978,13 +981,56 @@
                         <span class="order-meta-label">{{ $document['secondary_date']?->format('d/m/Y') ?? '—' }}</span>
                     </div>
 
-                    @if (filled($document['shipping_tracking_code'] ?? null))
-                        <div class="order-meta-row best-express-meta-row" data-best-express-tracking>
-                            <span class="best-express-logo" aria-label="Best Express">
-                                <span class="best">BEST</span><span class="express">EXPRESS</span>
+                    @if (($document['shipping_method'] ?? null) === \App\Enums\ShippingMethod::Express->value && filled($document['shipping_tracking_code'] ?? null))
+                        <div class="order-meta-row">
+                            <span class="best-express-badge" aria-label="Best Express">
+                                <span>BEST</span><span>EXPRESS</span>
                             </span>
                             <span>:</span>
                             <span class="order-meta-label">{{ $document['shipping_tracking_code'] }}</span>
+                        </div>
+                    @elseif (($document['shipping_method'] ?? null) === \App\Enums\ShippingMethod::Vehicle->value && filled($document['driver']['name'] ?? null))
+                        <div class="order-meta-row">
+                            <svg class="order-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="7" r="3"/>
+                                <path d="M5 21a7 7 0 0 1 14 0"/>
+                            </svg>
+                            <span class="order-meta-label">Nhà xe</span>
+                            <span>:</span>
+                            <span class="order-meta-label">
+                                {{ $document['driver']['name'] }}
+                                {{ filled($document['driver']['phone'] ?? null) ? ' - '.$document['driver']['phone'] : '' }}
+                                {{ filled($document['driver']['license_plate'] ?? null) ? ' - Biển số: '.$document['driver']['license_plate'] : '' }}
+                            </span>
+                        </div>
+                        @if (filled($document['driver']['note'] ?? null))
+                            <div class="order-meta-row">
+                                <svg class="order-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 4h16v16H4z"/>
+                                    <path d="M8 9h8M8 13h8"/>
+                                </svg>
+                                <span class="order-meta-label">Ghi chú nhà xe</span>
+                                <span>:</span>
+                                <span class="order-meta-label">{{ $document['driver']['note'] }}</span>
+                            </div>
+                        @endif
+                    @elseif (($document['shipping_method'] ?? null) === \App\Enums\ShippingMethod::InnerCity->value)
+                        <div class="order-meta-row">
+                            <svg class="order-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 17h2l2-6h10l2 6h2"/>
+                                <path d="M5 17h14v3H5z"/>
+                                <circle cx="8" cy="20" r="1"/>
+                                <circle cx="16" cy="20" r="1"/>
+                            </svg>
+                            <span class="shipping-method-text">Giao hàng nội thành</span>
+                        </div>
+                    @elseif (($document['shipping_method'] ?? null) === \App\Enums\ShippingMethod::CustomerPickup->value)
+                        <div class="order-meta-row">
+                            <svg class="order-meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 10h16v10H4z"/>
+                                <path d="M3 10l2-6h14l2 6M9 14h6"/>
+                            </svg>
+                            <span class="shipping-method-text">Khách hàng tới lấy</span>
                         </div>
                     @endif
 

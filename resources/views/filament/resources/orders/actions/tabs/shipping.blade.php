@@ -1,6 +1,5 @@
 @php
-    $showShippingMethod = ! $order->is_delivered
-        || $order->shipping_method === \App\Enums\ShippingMethod::Express;
+    $showShippingMethod = ! $order->is_delivered;
 @endphp
 
 @if ($showShippingMethod)
@@ -30,15 +29,18 @@
     <div class="grid gap-4 p-5 md:grid-cols-2">
         <div class="rounded-lg bg-slate-50 p-4">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Vận chuyển</p>
-            <p class="mt-2 text-sm font-medium text-slate-800">{{ $order->shippingProvider?->name ?? 'Chưa chọn đơn vị vận chuyển' }}</p>
             <p class="mt-1 text-sm text-slate-500">
-                @if ($order->shipping_method === \App\Enums\ShippingMethod::Vehicle)
+                @if ($order->shipping_method === \App\Enums\ShippingMethod::Express)
+                    Mã giao hàng nhanh: {{ $order->shipping_tracking_code ?: 'Chưa nhập' }}
+                @elseif ($order->shipping_method === \App\Enums\ShippingMethod::Vehicle)
                     {{ $order->driver?->name ?? 'Chưa chọn tài xế' }}
                     @if ($order->driver?->phone)
                         - {{ $order->driver->phone }}
                     @endif
+                @elseif ($order->shipping_method === \App\Enums\ShippingMethod::CustomerPickup)
+                    Khách hàng tự tới lấy
                 @else
-                    Mã vận đơn: {{ $order->shipping_tracking_code ?: 'Chưa nhập' }}
+                    Giao hàng nội thành
                 @endif
             </p>
         </div>

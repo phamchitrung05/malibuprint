@@ -4,15 +4,16 @@ namespace Tests\Feature;
 
 use App\Enums\FulfillmentMode;
 use App\Enums\ShippingMethod;
+use App\Filament\Resources\Orders\Pages\CreateOrder;
 use App\Filament\Resources\Orders\Pages\ListOrders;
 use App\Livewire\Orders\UpdateOrderStatus;
 use App\Livewire\Orders\UpdateShippingMethod;
 use App\Models\Customer;
 use App\Models\Driver;
 use App\Models\Order;
-use App\Models\ShippingProvider;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -20,15 +21,31 @@ class OrderShippingMethodTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_completed_single_order_can_use_best_express_with_tracking_code(): void
+    public function test_shipping_provider_schema_has_been_removed(): void
+    {
+        $this->assertFalse(Schema::hasTable('shipping_providers'));
+        $this->assertFalse(Schema::hasColumn('orders', 'shipping_provider_id'));
+    }
+
+    public function test_order_form_separates_order_and_shipping_information_into_tabs(): void
+    {
+        Livewire::actingAs(User::factory()->create())
+            ->test(CreateOrder::class)
+            ->assertSee('Thông tin đơn hàng')
+            ->assertSee('Thông tin giao hàng')
+            ->assertSee('Giao hàng nội thành');
+    }
+
+    public function test_completed_single_order_can_use_express_delivery_with_tracking_code(): void
     {
         [$user, $order] = $this->createOrder();
 
         Livewire::actingAs($user)
             ->test(UpdateShippingMethod::class, ['orderId' => $order->id])
+            ->assertSeeHtml('fi-select-input')
+            ->assertDontSee('Đơn vị vận chuyển')
             ->set('shippingMethod', ShippingMethod::Express->value)
             ->set('trackingCode', '  BEST-123456  ')
-            ->set('shippingProviderId', $order->shipping_provider_id)
             ->call('save')
             ->assertHasNoErrors()
             ->assertNotified('Đã cập nhật phương thức vận chuyển');
@@ -54,7 +71,7 @@ class OrderShippingMethodTest extends TestCase
         $this->assertStringContainsString('Lưu thông tin vận chuyển', $shippingTab);
     }
 
-    public function test_switching_back_to_standard_clears_tracking_code(): void
+    public function test_switching_to_vehicle_delivery_clears_tracking_code(): void
     {
         [$user, $order] = $this->createOrder([
             'shipping_method' => ShippingMethod::Express,
@@ -65,7 +82,6 @@ class OrderShippingMethodTest extends TestCase
             ->test(UpdateShippingMethod::class, ['orderId' => $order->id])
             ->set('shippingMethod', ShippingMethod::Vehicle->value)
             ->set('driverId', Driver::query()->firstOrFail()->id)
-            ->set('shippingProviderId', $order->shipping_provider_id)
             ->set('trackingCode', '')
             ->call('save')
             ->assertHasNoErrors();
@@ -87,7 +103,6 @@ class OrderShippingMethodTest extends TestCase
         Livewire::actingAs($user)
             ->test(UpdateShippingMethod::class, ['orderId' => $order->id])
             ->set('shippingMethod', ShippingMethod::Express->value)
-            ->set('shippingProviderId', $order->shipping_provider_id)
             ->set('trackingCode', 'BEST-CUSTOMER-STOCK')
             ->call('save')
             ->assertHasNoErrors();
@@ -100,6 +115,62 @@ class OrderShippingMethodTest extends TestCase
         $shippingTab = $this->renderShippingTab($order);
 
         $this->assertStringContainsString('data-shipping-method-section', $shippingTab);
+        $this->assertStringNotContainsString('Đơn vị vận chuyển', $shippingTab);
+    }
+
+    public function test_customer_pickup_needs_no_tracking_code_or_driver(): void
+    {
+        [$user, $order] = $this->createOrder([
+            'shipping_method' => ShippingMethod::Express,
+            'shipping_tracking_code' => 'EXISTING-CODE',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(UpdateShippingMethod::class, ['orderId' => $order->id])
+            ->set('shippingMethod', ShippingMethod::CustomerPickup->value)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $order->refresh();
+
+        $this->assertSame(ShippingMethod::CustomerPickup, $order->shipping_method);
+        $this->assertNull($order->shipping_tracking_code);
+        $this->assertNull($order->driver_id);
+        $this->assertStringContainsString('Khách hàng tự tới lấy', $this->renderShippingTab($order));
+
+        Livewire::actingAs($user)
+            ->test(UpdateOrderStatus::class, ['orderId' => $order->id])
+            ->call('confirmShipping')
+            ->assertHasNoErrors();
+
+        $this->assertTrue($order->refresh()->is_delivered);
+    }
+
+    public function test_inner_city_delivery_needs_no_tracking_code_or_driver(): void
+    {
+        [$user, $order] = $this->createOrder([
+            'shipping_method' => ShippingMethod::Vehicle,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(UpdateShippingMethod::class, ['orderId' => $order->id])
+            ->set('shippingMethod', ShippingMethod::InnerCity->value)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $order->refresh();
+
+        $this->assertSame(ShippingMethod::InnerCity, $order->shipping_method);
+        $this->assertNull($order->shipping_tracking_code);
+        $this->assertNull($order->driver_id);
+        $this->assertStringContainsString('Giao hàng nội thành', $this->renderShippingTab($order));
+
+        Livewire::actingAs($user)
+            ->test(UpdateOrderStatus::class, ['orderId' => $order->id])
+            ->call('confirmShipping')
+            ->assertHasNoErrors();
+
+        $this->assertTrue($order->refresh()->is_delivered);
     }
 
     public function test_delivered_order_cannot_change_shipping_method(): void
@@ -116,7 +187,7 @@ class OrderShippingMethodTest extends TestCase
         $this->assertStringNotContainsString('data-shipping-method-section', $this->renderShippingTab($order));
     }
 
-    public function test_delivered_best_express_order_keeps_read_only_tracking_section(): void
+    public function test_delivered_express_order_keeps_tracking_information(): void
     {
         [, $order] = $this->createOrder([
             'is_delivered' => true,
@@ -126,12 +197,12 @@ class OrderShippingMethodTest extends TestCase
 
         $shippingTab = $this->renderShippingTab($order);
 
-        $this->assertStringContainsString('data-shipping-method-section', $shippingTab);
+        $this->assertStringNotContainsString('data-shipping-method-section', $shippingTab);
         $this->assertStringContainsString('BEST-DELIVERED', $shippingTab);
-        $this->assertStringContainsString('disabled', $shippingTab);
+        $this->assertStringContainsString('Mã giao hàng nhanh', $shippingTab);
     }
 
-    public function test_best_express_order_cannot_be_delivered_without_tracking_code(): void
+    public function test_express_order_cannot_be_delivered_without_tracking_code(): void
     {
         [$user, $order] = $this->createOrder();
         $order->forceFill([
@@ -148,10 +219,10 @@ class OrderShippingMethodTest extends TestCase
         $this->assertDatabaseCount('shipping', 0);
     }
 
-    public function test_order_table_renders_best_express_badge_after_customer_name(): void
+    public function test_order_table_renders_shipping_method_badge_after_customer_name(): void
     {
         [$user] = $this->createOrder();
-        [, $bestExpressOrder] = $this->createOrder([
+        [, $expressOrder] = $this->createOrder([
             'shipping_method' => ShippingMethod::Express,
             'shipping_tracking_code' => 'BEST-TABLE',
         ]);
@@ -163,12 +234,20 @@ class OrderShippingMethodTest extends TestCase
             ->assertSee('BEST')
             ->assertSee('EXPRESS');
 
-        $customerName = view('filament.tables.columns.customer-name', [
-            'name' => $bestExpressOrder->customer->name,
-            'isBestExpress' => true,
+        $expressCustomerName = view('filament.tables.columns.customer-name', [
+            'name' => $expressOrder->customer->name,
+            'isExpress' => true,
+        ])->render();
+        $otherCustomerName = view('filament.tables.columns.customer-name', [
+            'name' => 'Khách không chuyển phát nhanh',
+            'isExpress' => false,
         ])->render();
 
-        $this->assertStringContainsString('Giao bằng Best Express', $customerName);
+        $this->assertStringContainsString('Giao bằng Best Express', $expressCustomerName);
+        $this->assertStringContainsString('BEST', $expressCustomerName);
+        $this->assertStringContainsString('EXPRESS', $expressCustomerName);
+        $this->assertStringNotContainsString('BEST', $otherCustomerName);
+        $this->assertStringNotContainsString('EXPRESS', $otherCustomerName);
     }
 
     /** @return array{User, Order} */
@@ -180,8 +259,6 @@ class OrderShippingMethodTest extends TestCase
             'phone' => '0900000099',
             'address' => '123 Nguyễn Huệ',
         ]);
-        $vehicleProvider = ShippingProvider::query()->where('name', 'Giao hàng nội bộ')->firstOrFail();
-        $bestExpressProvider = ShippingProvider::query()->where('name', 'Best Express')->firstOrFail();
         $driver = Driver::query()->create([
             'name' => 'Tài xế vận chuyển',
             'phone' => '0900000011',
@@ -202,7 +279,6 @@ class OrderShippingMethodTest extends TestCase
             'is_delivered' => false,
             'is_paid' => false,
             'shipping_method' => $method,
-            'shipping_provider_id' => $method === ShippingMethod::Express ? $bestExpressProvider->id : $vehicleProvider->id,
             'driver_id' => $method === ShippingMethod::Vehicle ? $driver->id : null,
         ], $attributes));
 

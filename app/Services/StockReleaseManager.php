@@ -9,7 +9,6 @@ use App\Models\CustomerStock;
 use App\Models\CustomerStockItem;
 use App\Models\Driver;
 use App\Models\Order;
-use App\Models\ShippingProvider;
 use App\Models\StockRelease;
 use App\Support\StatusApp;
 use Illuminate\Support\Collection;
@@ -176,15 +175,9 @@ class StockReleaseManager
             ]);
         }
 
-        if (! ShippingProvider::query()->whereKey($order->shipping_provider_id)->where('is_active', true)->exists()) {
-            throw ValidationException::withMessages([
-                'customerStock' => 'Vui lòng chọn đơn vị vận chuyển đang hoạt động trước khi xuất kho.',
-            ]);
-        }
-
         if ($order->shipping_method === ShippingMethod::Express && blank($order->shipping_tracking_code)) {
             throw ValidationException::withMessages([
-                'customerStock' => 'Vui lòng nhập mã vận đơn trước khi xuất kho.',
+                'customerStock' => 'Vui lòng nhập mã giao hàng nhanh trước khi xuất kho.',
             ]);
         }
 

@@ -9,7 +9,6 @@ use App\Models\Driver;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
-use App\Models\ShippingProvider;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -234,7 +233,6 @@ class OrderWorkflowTest extends TestCase
             'name' => 'Khách thử nghiệm',
             'phone' => '0900000000',
         ]);
-        $provider = ShippingProvider::query()->where('name', 'Giao hàng nội bộ')->firstOrFail();
         $driver = Driver::query()->create([
             'name' => 'Tài xế quy trình',
             'phone' => '0900000033',
@@ -249,7 +247,6 @@ class OrderWorkflowTest extends TestCase
             'subtotal' => 1000000,
             'discount' => 0,
             'total_amount' => 1000000,
-            'shipping_provider_id' => $provider->id,
             'driver_id' => $driver->id,
             'created_by' => $user->id,
         ]);

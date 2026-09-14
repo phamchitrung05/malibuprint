@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\FulfillmentMode;
 use App\Enums\FulfillmentStatus;
+use App\Enums\ShippingMethod;
 use App\Livewire\CustomerStocks\CustomerStockReleaseHistory;
 use App\Livewire\CustomerStocks\ReleaseCustomerStock;
 use App\Livewire\Orders\UpdateOrderStatus;
@@ -13,7 +14,6 @@ use App\Models\Driver;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
-use App\Models\ShippingProvider;
 use App\Models\User;
 use App\Services\CustomerStockManager;
 use App\Services\OrderItemServiceManager;
@@ -87,6 +87,26 @@ class CustomerStockWorkflowTest extends TestCase
             array_search('shipping.created', $activityEvents, true),
             array_search('customer_stock.released', $activityEvents, true),
         );
+    }
+
+    public function test_customer_pickup_can_release_stock_without_driver_or_tracking_code(): void
+    {
+        [$user, $order, $stock] = $this->completedCustomerStockOrder(10);
+        $stockItem = $stock->items()->sole();
+        $order->forceFill([
+            'shipping_method' => ShippingMethod::CustomerPickup,
+            'shipping_tracking_code' => null,
+            'driver_id' => null,
+        ])->saveQuietly();
+
+        Livewire::actingAs($user)
+            ->test(ReleaseCustomerStock::class, ['customerStockId' => $stock->id])
+            ->set("quantities.{$stockItem->id}", 2)
+            ->call('release')
+            ->assertHasNoErrors();
+
+        $this->assertSame(2, $stockItem->refresh()->released_quantity);
+        $this->assertSame('delivered', $stock->releases()->sole()->shipping->status);
     }
 
     public function test_customer_stock_releases_allocate_service_by_released_quantity(): void
@@ -320,7 +340,6 @@ class CustomerStockWorkflowTest extends TestCase
             'stock' => 0,
             'status' => 'active',
         ]);
-        $provider = ShippingProvider::query()->where('name', 'Giao hàng nội bộ')->firstOrFail();
         $driver = Driver::query()->create([
             'name' => 'Tài xế lưu kho',
             'phone' => '0900000022',
@@ -336,7 +355,6 @@ class CustomerStockWorkflowTest extends TestCase
             'discount' => 0,
             'shipping_fee' => $shippingFee,
             'total_amount' => ($quantity * 10000) + $shippingFee,
-            'shipping_provider_id' => $provider->id,
             'driver_id' => $driver->id,
             'created_by' => $user->id,
         ]);

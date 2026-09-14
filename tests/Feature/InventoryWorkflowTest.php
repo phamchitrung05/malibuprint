@@ -14,7 +14,6 @@ use App\Models\Driver;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductSku;
-use App\Models\ShippingProvider;
 use App\Models\User;
 use App\Services\InventoryManager;
 use App\Services\OrderInventoryManager;
@@ -431,7 +430,6 @@ class InventoryWorkflowTest extends TestCase
             'name' => 'Khách tồn kho',
             'phone' => fake()->unique()->numerify('09########'),
         ]);
-        $provider = ShippingProvider::query()->where('name', 'Giao hàng nội bộ')->firstOrFail();
         $driver = Driver::query()->create([
             'name' => 'Tài xế tồn kho',
             'phone' => '0900000044',
@@ -457,7 +455,6 @@ class InventoryWorkflowTest extends TestCase
             'customer_id' => $customer->id,
             'order_date' => now(),
             'created_by' => $user->id,
-            'shipping_provider_id' => $provider->id,
             'driver_id' => $driver->id,
         ]);
         $order->items()->createMany([

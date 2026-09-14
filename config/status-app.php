@@ -74,6 +74,8 @@ return [
             'values' => [
                 'express' => ['label' => 'Gửi chuyển phát nhanh'],
                 'vehicle' => ['label' => 'Gửi hàng xe'],
+                'customer_pickup' => ['label' => 'Khách hàng tự tới lấy'],
+                'inner_city' => ['label' => 'Giao hàng nội thành'],
             ],
         ],
         'payment_summary' => [

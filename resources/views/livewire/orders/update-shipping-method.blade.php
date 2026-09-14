@@ -13,28 +13,20 @@
 
     <div class="grid gap-4 p-5 md:grid-cols-2">
         <label class="grid gap-2 text-xs font-medium text-slate-600">
-            Phương thức vận chuyển
-            <select wire:model.live="shippingMethod" @disabled(! $canUpdate) class="rounded-lg border-slate-300 text-sm">
+            <span>Phương thức vận chuyển</span>
+            <x-filament::input.wrapper :disabled="! $canUpdate" :valid="! $errors->has('shippingMethod')">
+                <x-filament::input.select wire:model.live="shippingMethod" :disabled="! $canUpdate">
                 @foreach (\App\Enums\ShippingMethod::cases() as $method)
                     <option value="{{ $method->value }}">{{ $method->label() }}</option>
                 @endforeach
-            </select>
-        </label>
-
-        <label class="grid gap-2 text-xs font-medium text-slate-600">
-            Đơn vị vận chuyển
-            <select wire:model="shippingProviderId" @disabled(! $canUpdate) class="rounded-lg border-slate-300 text-sm">
-                <option value="">Chọn đơn vị vận chuyển</option>
-                @foreach ($shippingProviders as $provider)
-                    <option value="{{ $provider->id }}">{{ $provider->name }}</option>
-                @endforeach
-            </select>
-            @error('shippingProviderId') <span class="text-red-600">{{ $message }}</span> @enderror
+                </x-filament::input.select>
+            </x-filament::input.wrapper>
+            @error('shippingMethod') <span class="text-red-600">{{ $message }}</span> @enderror
         </label>
 
         @if ($shippingMethod === \App\Enums\ShippingMethod::Express->value)
             <label class="grid gap-2 text-xs font-medium text-slate-600 md:col-span-2">
-                Mã vận đơn
+                Mã giao hàng nhanh
                 <input
                     id="shipping-tracking-code-{{ $orderId }}"
                     wire:model="trackingCode"
@@ -42,23 +34,33 @@
                     maxlength="100"
                     @disabled(! $canUpdate)
                     class="rounded-lg border-slate-300 text-sm"
-                    placeholder="Nhập mã vận đơn"
+                    placeholder="Nhập mã giao hàng nhanh"
                 />
                 @error('trackingCode') <span class="text-red-600">{{ $message }}</span> @enderror
             </label>
-        @else
+        @elseif ($shippingMethod === \App\Enums\ShippingMethod::Vehicle->value)
             <label class="grid gap-2 text-xs font-medium text-slate-600 md:col-span-2">
-                Tài xế
-                <select wire:model="driverId" @disabled(! $canUpdate) class="rounded-lg border-slate-300 text-sm">
+                <span>Tài xế</span>
+                <x-filament::input.wrapper :disabled="! $canUpdate" :valid="! $errors->has('driverId')">
+                    <x-filament::input.select wire:model="driverId" :disabled="! $canUpdate">
                     <option value="">Chọn tài xế</option>
                     @foreach ($drivers as $driver)
                         <option value="{{ $driver->id }}">
                             {{ $driver->name }} - {{ $driver->phone }}{{ filled($driver->license_plate) ? ' - '.$driver->license_plate : '' }}
                         </option>
                     @endforeach
-                </select>
+                    </x-filament::input.select>
+                </x-filament::input.wrapper>
                 @error('driverId') <span class="text-red-600">{{ $message }}</span> @enderror
             </label>
+        @elseif ($shippingMethod === \App\Enums\ShippingMethod::CustomerPickup->value)
+            <div class="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 md:col-span-2">
+                Khách hàng sẽ tự tới lấy hàng. Không cần nhập mã giao hàng hoặc chọn tài xế.
+            </div>
+        @else
+            <div class="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-700 md:col-span-2">
+                Đơn hàng sẽ được giao trong khu vực nội thành. Không cần nhập mã giao hàng hoặc chọn tài xế.
+            </div>
         @endif
 
         @error('shippingMethod') <p class="text-xs text-red-600 md:col-span-2">{{ $message }}</p> @enderror

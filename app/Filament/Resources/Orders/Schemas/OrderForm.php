@@ -11,7 +11,6 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductSku;
 use App\Models\Service;
-use App\Models\ShippingProvider;
 use App\Support\StatusApp;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -26,6 +25,8 @@ use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\View;
@@ -170,100 +171,87 @@ class OrderForm
                             'xl' => 4,
                         ])
                         ->schema([
-                            Section::make('Thông tin đơn hàng')
-                                ->icon(Heroicon::OutlinedCalendarDays)
-                                ->columns([
-                                    'default' => 1,
-                                    'md' => 2,
-                                    'xl' => 1,
-                                    '2xl' => 2,
+                            Tabs::make('order_information_tabs')
+                                ->tabs([
+                                    Tab::make('Thông tin đơn hàng')
+                                        ->icon(Heroicon::OutlinedClipboardDocumentList)
+                                        ->schema([
+                                            TextInput::make('order_code')
+                                                ->label('Mã đơn hàng')
+                                                ->default('Tự động sau khi lưu')
+                                                ->disabled()
+                                                ->dehydrated(false),
+                                            Select::make('fulfillment_mode')
+                                                ->label('Hình thức giao hàng')
+                                                ->options(collect(FulfillmentMode::cases())
+                                                    ->mapWithKeys(fn (FulfillmentMode $mode): array => [$mode->value => $mode->label()])
+                                                    ->all())
+                                                ->default(StatusApp::default('order.fulfillment_mode'))
+                                                ->required()
+                                                // Hình thức giao được chốt lúc tạo để không đổi nguồn tồn khi Order đang sản xuất.
+                                                ->disabled(fn (string $operation): bool => $operation === 'edit'),
+                                            DatePicker::make('delivery_date')
+                                                ->label('Ngày dự kiến giao')
+                                                ->default(now())
+                                                // Dùng calendar của Filament thay cho date picker native khác nhau giữa các trình duyệt.
+                                                ->native(false)
+                                                ->displayFormat('d/m/Y')
+                                                ->locale('vi')
+                                                ->weekStartsOnMonday()
+                                                ->closeOnDateSelection()
+                                                // Create Order không cho chọn hoặc gửi ngày dự kiến đã nằm trong quá khứ.
+                                                ->minDate(fn (string $operation): ?string => $operation === 'create'
+                                                    ? today()->toDateString()
+                                                    : null)
+                                                // Dữ liệu cũ có thể chưa có ngày dự kiến; chỉ bắt buộc với Order tạo mới.
+                                                ->required(fn (string $operation): bool => $operation === 'create'),
+                                            Textarea::make('note')
+                                                ->label('Ghi chú đơn hàng')
+                                                ->placeholder('Nhập ghi chú đơn hàng...')
+                                                ->rows(3),
+                                        ]),
+                                    Tab::make('Thông tin giao hàng')
+                                        ->icon(Heroicon::OutlinedTruck)
+                                        ->schema([
+                                            Select::make('shipping_method')
+                                                ->label('Phương thức vận chuyển')
+                                                ->options(collect(ShippingMethod::cases())
+                                                    ->mapWithKeys(fn (ShippingMethod $method): array => [$method->value => $method->label()])
+                                                    ->all())
+                                                // Chuyển phát nhanh là lựa chọn mặc định; mã giao hàng nhanh được kiểm tra lúc xác nhận giao.
+                                                ->default(ShippingMethod::Express->value)
+                                                ->live()
+                                                ->afterStateUpdated(function (?string $state, Set $set): void {
+                                                    if ($state === ShippingMethod::Express->value) {
+                                                        $set('driver_id', null);
+                                                    } elseif ($state === ShippingMethod::Vehicle->value) {
+                                                        $set('shipping_tracking_code', null);
+                                                    } else {
+                                                        $set('driver_id', null);
+                                                        $set('shipping_tracking_code', null);
+                                                    }
+                                                })
+                                                ->required(),
+                                            TextInput::make('shipping_tracking_code')
+                                                ->label('Mã giao hàng nhanh')
+                                                ->maxLength(100)
+                                                ->visible(fn (Get $get): bool => $get('shipping_method') === ShippingMethod::Express->value)
+                                                ->required(fn (Get $get, string $operation): bool => $operation === 'create'
+                                                    && $get('shipping_method') === ShippingMethod::Express->value),
+                                            Select::make('driver_id')
+                                                ->label('Tài xế')
+                                                ->relationship('driver', 'name', modifyQueryUsing: fn (Builder $query): Builder => $query->where('is_active', true)->orderBy('name'))
+                                                ->getOptionLabelFromRecordUsing(fn (Driver $driver): string => filled($driver->phone)
+                                                    ? "{$driver->name} - {$driver->phone}"
+                                                    : $driver->name)
+                                                ->searchable(['name', 'phone', 'license_plate'])
+                                                ->preload()
+                                                ->visible(fn (Get $get): bool => $get('shipping_method') === ShippingMethod::Vehicle->value)
+                                                ->required(fn (Get $get, string $operation): bool => $operation === 'create'
+                                                    && $get('shipping_method') === ShippingMethod::Vehicle->value),
+                                        ]),
                                 ])
-                                ->schema([
-                                    TextInput::make('order_code')
-                                        ->label('Mã đơn hàng')
-                                        ->default('Tự động sau khi lưu')
-                                        ->disabled()
-                                        ->dehydrated(false)
-                                        ->columnSpanFull(),
-                                    Select::make('fulfillment_mode')
-                                        ->label('Hình thức giao hàng')
-                                        ->options(collect(FulfillmentMode::cases())
-                                            ->mapWithKeys(fn (FulfillmentMode $mode): array => [$mode->value => $mode->label()])
-                                            ->all())
-                                        ->default(StatusApp::default('order.fulfillment_mode'))
-                                        ->required()
-                                        // Hình thức giao được chốt lúc tạo để không đổi nguồn tồn khi Order đang sản xuất.
-                                        ->disabled(fn (string $operation): bool => $operation === 'edit')
-                                        ->columnSpanFull(),
-                                    Select::make('shipping_method')
-                                        ->label('Phương thức vận chuyển')
-                                        ->options(collect(ShippingMethod::cases())
-                                            ->mapWithKeys(fn (ShippingMethod $method): array => [$method->value => $method->label()])
-                                            ->all())
-                                        // Chuyển phát nhanh là lựa chọn an toàn mặc định; mã vận đơn được kiểm tra lúc xác nhận giao.
-                                        ->default(ShippingMethod::Express->value)
-                                        ->live()
-                                        ->afterStateUpdated(function (?string $state, Set $set): void {
-                                            if ($state === ShippingMethod::Express->value) {
-                                                $set('driver_id', null);
-                                            } else {
-                                                $set('shipping_tracking_code', null);
-                                            }
-                                        })
-                                        ->required(),
-                                    Select::make('shipping_provider_id')
-                                        ->label('Đơn vị vận chuyển')
-                                        ->relationship('shippingProvider', 'name', modifyQueryUsing: fn (Builder $query): Builder => $query->where('is_active', true)->orderBy('name'))
-                                        ->searchable()
-                                        ->preload()
-                                        ->default(function (): ?int {
-                                            $providerId = ShippingProvider::query()
-                                                ->where('is_active', true)
-                                                ->where('name', 'Best Express')
-                                                ->value('id');
-
-                                            return $providerId === null ? null : (int) $providerId;
-                                        })
-                                        ->required(fn (string $operation): bool => $operation === 'create'),
-                                    TextInput::make('shipping_tracking_code')
-                                        ->label('Mã vận đơn')
-                                        ->maxLength(100)
-                                        ->visible(fn (Get $get): bool => $get('shipping_method') === ShippingMethod::Express->value)
-                                        ->required(fn (Get $get, string $operation): bool => $operation === 'create'
-                                            && $get('shipping_method') === ShippingMethod::Express->value),
-                                    Select::make('driver_id')
-                                        ->label('Tài xế')
-                                        ->relationship('driver', 'name', modifyQueryUsing: fn (Builder $query): Builder => $query->where('is_active', true)->orderBy('name'))
-                                        ->getOptionLabelFromRecordUsing(fn (Driver $driver): string => filled($driver->phone)
-                                            ? "{$driver->name} - {$driver->phone}"
-                                            : $driver->name)
-                                        ->searchable(['name', 'phone', 'license_plate'])
-                                        ->preload()
-                                        ->visible(fn (Get $get): bool => $get('shipping_method') === ShippingMethod::Vehicle->value)
-                                        ->required(fn (Get $get, string $operation): bool => $operation === 'create'
-                                            && $get('shipping_method') === ShippingMethod::Vehicle->value),
-                                    DatePicker::make('delivery_date')
-                                        ->label('Ngày dự kiến giao')
-                                        ->default(now())
-                                        // Dùng calendar của Filament thay cho date picker native khác nhau giữa các trình duyệt.
-                                        ->native(false)
-                                        ->displayFormat('d/m/Y')
-                                        ->locale('vi')
-                                        ->weekStartsOnMonday()
-                                        ->closeOnDateSelection()
-                                        // Create Order không cho chọn hoặc gửi ngày dự kiến đã nằm trong quá khứ.
-                                        ->minDate(fn (string $operation): ?string => $operation === 'create'
-                                            ? today()->toDateString()
-                                            : null)
-                                        // Dữ liệu cũ có thể chưa có ngày dự kiến; chỉ bắt buộc với Order tạo mới.
-                                        ->required(fn (string $operation): bool => $operation === 'create')
-                                        ->columnSpanFull(),
-                                    Textarea::make('note')
-                                        ->label('Ghi chú đơn hàng')
-                                        ->placeholder('Nhập ghi chú đơn hàng...')
-                                        ->rows(3)
-                                        ->columnSpanFull(),
-                                ]),
+                                ->columnSpanFull(),
                             Section::make('Tệp đã liên kết')
                                 ->description('Danh sách file thuộc đơn hàng và trạng thái lưu trữ hiện tại')
                                 ->icon(Heroicon::OutlinedPaperClip)
