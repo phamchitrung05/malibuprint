@@ -9,9 +9,30 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('orders', function (Blueprint $table): void {
-            $table->dropConstrainedForeignId('shipping_provider_id');
-        });
+        if (Schema::hasColumn('orders', 'shipping_provider_id')) {
+            $foreignKeys = collect();
+
+            if (DB::connection()->getDriverName() === 'mysql') {
+                $foreignKeys = DB::table('information_schema.KEY_COLUMN_USAGE')
+                    ->where('CONSTRAINT_SCHEMA', DB::getDatabaseName())
+                    ->where('TABLE_NAME', 'orders')
+                    ->where('COLUMN_NAME', 'shipping_provider_id')
+                    ->whereNotNull('REFERENCED_TABLE_NAME')
+                    ->pluck('CONSTRAINT_NAME');
+            } else {
+                $foreignKeys = collect(['shipping_provider_id']);
+            }
+
+            Schema::table('orders', function (Blueprint $table) use ($foreignKeys): void {
+                foreach ($foreignKeys as $foreignKey) {
+                    $table->dropForeign(
+                        $foreignKey === 'shipping_provider_id' ? [$foreignKey] : $foreignKey,
+                    );
+                }
+
+                $table->dropColumn('shipping_provider_id');
+            });
+        }
 
         Schema::dropIfExists('shipping_providers');
     }
