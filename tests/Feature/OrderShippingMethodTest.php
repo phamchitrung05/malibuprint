@@ -139,7 +139,7 @@ class OrderShippingMethodTest extends TestCase
         $this->assertDatabaseCount('shipping', 0);
     }
 
-    public function test_order_table_only_renders_best_express_badge_for_matching_orders(): void
+    public function test_order_table_renders_best_express_badge_after_customer_name(): void
     {
         [$user] = $this->createOrder();
         [, $bestExpressOrder] = $this->createOrder([
@@ -149,15 +149,17 @@ class OrderShippingMethodTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(ListOrders::class)
-            ->assertTableColumnExists('shipping_method')
+            ->assertTableColumnExists('customer.name')
+            ->assertTableColumnDoesNotExist('shipping_method')
             ->assertSee('BEST')
             ->assertSee('EXPRESS');
 
-        $badge = view('filament.tables.columns.best-express-badge', [
-            'getRecord' => fn (): Order => $bestExpressOrder,
+        $customerName = view('filament.tables.columns.customer-name', [
+            'name' => $bestExpressOrder->customer->name,
+            'isBestExpress' => true,
         ])->render();
 
-        $this->assertStringContainsString('Giao bằng Best Express', $badge);
+        $this->assertStringContainsString('Giao bằng Best Express', $customerName);
     }
 
     /** @return array{User, Order} */
