@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Services\InventoryManager;
 use App\Services\OrderInventoryManager;
 use App\Support\StatusApp;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -146,6 +147,26 @@ class InventoryWorkflowTest extends TestCase
                 checkFieldUsing: fn (Select $field): bool => ! array_key_exists($product->id, $field->getOptions())
                     && ! array_key_exists($unavailableProduct->id, $field->getOptions()),
             );
+    }
+
+    public function test_order_form_uses_filament_date_picker_for_delivery_date(): void
+    {
+        $component = Livewire::actingAs(User::factory()->create())
+            ->test(CreateOrder::class);
+
+        $component
+            ->assertFormFieldExists(
+                'delivery_date',
+                checkFieldUsing: fn (DatePicker $field): bool => ! $field->isNative()
+                    && $field->getDisplayFormat() === 'd/m/Y'
+                    && $field->getLocale() === 'vi'
+                    && $field->getFirstDayOfWeek() === 1
+                    && $field->shouldCloseOnDateSelection()
+                    && $field->getMinDate() === today()->toDateString(),
+            )
+            ->fillForm(['delivery_date' => today()->subDay()->toDateString()])
+            ->call('create')
+            ->assertHasFormErrors(['delivery_date' => 'after_or_equal']);
     }
 
     public function test_filament_does_not_persist_order_when_inventory_is_insufficient(): void

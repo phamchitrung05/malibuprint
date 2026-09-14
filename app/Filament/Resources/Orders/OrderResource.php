@@ -7,6 +7,7 @@ use App\Filament\Resources\Orders\Pages\EditOrder;
 use App\Filament\Resources\Orders\Pages\ListOrders;
 use App\Filament\Resources\Orders\Schemas\OrderForm;
 use App\Filament\Resources\Orders\Tables\OrdersTable;
+use App\Filament\Resources\Orders\Widgets\OrderStatsOverview;
 use App\Models\Order;
 use App\Support\StatusApp;
 use BackedEnum;
@@ -52,6 +53,13 @@ class OrderResource extends Resource
     {
         return [
             //
+        ];
+    }
+
+    public static function getWidgets(): array
+    {
+        return [
+            OrderStatsOverview::class,
         ];
     }
 

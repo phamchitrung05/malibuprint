@@ -195,6 +195,16 @@ class OrderForm
                                     DatePicker::make('delivery_date')
                                         ->label('Ngày dự kiến giao')
                                         ->default(now())
+                                        // Dùng calendar của Filament thay cho date picker native khác nhau giữa các trình duyệt.
+                                        ->native(false)
+                                        ->displayFormat('d/m/Y')
+                                        ->locale('vi')
+                                        ->weekStartsOnMonday()
+                                        ->closeOnDateSelection()
+                                        // Create Order không cho chọn hoặc gửi ngày dự kiến đã nằm trong quá khứ.
+                                        ->minDate(fn (string $operation): ?string => $operation === 'create'
+                                            ? today()->toDateString()
+                                            : null)
                                         // Dữ liệu cũ có thể chưa có ngày dự kiến; chỉ bắt buộc với Order tạo mới.
                                         ->required(fn (string $operation): bool => $operation === 'create')
                                         ->columnSpanFull(),
