@@ -1,4 +1,4 @@
-<span class="flex max-w-full items-start gap-2">
+<span class="flex max-w-full items-center gap-2">
     <span class="min-w-0 break-words">{{ $name }}</span>
     @if ($isBestExpress)
         <span
